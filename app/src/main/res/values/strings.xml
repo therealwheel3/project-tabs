@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">project tabs</string>
+    <string name="track_number">track number</string>
+    <string name="bpm">BPM</string>
+</resources>
