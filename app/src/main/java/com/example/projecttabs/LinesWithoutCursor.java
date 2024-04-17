@@ -329,12 +329,15 @@ public class LinesWithoutCursor extends View {
         paint.setStrokeWidth(5);
         float x0 = lines.get(0)[0]; // first and last note x
         float x1 = lines.get(lines.size() - 1)[0];
+        float dX = x1 - x0;
         float maxY = 999999;
         float first = 999999;
         float last = 999999;
         float tick = -1;
         int indentT = -1;
         float indentX = 0;
+        float diffX;
+        float kX;
         boolean direction = Packer.stickDirection(lines, y * 7);
         if (direction){
             for (int i = 0; i < lines.size(); i++){
@@ -344,11 +347,6 @@ public class LinesWithoutCursor extends View {
 
 
         if (direction){
-
-            //first -= y / 2;
-            //last -= y / 2;
-            //maxY -= y / 2;
-            //y *= -1;
             x0 -= x / 3;
             x1 -= x / 3;
             indentX = x / 3;
@@ -371,11 +369,7 @@ public class LinesWithoutCursor extends View {
             }
 
 
-            float prev = lines.get(0)[0];
             if (maxY > first && maxY > last) {
-                int k = 0;
-                float indent = Math.abs(((Math.abs(maxY - y)) - (maxY + y)) / indentT);
-                indent *= -1;
                 if (last == first){
                     for (byte i = 0; i < lines.get(0)[5]; i++) {
                         canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
@@ -383,21 +377,21 @@ public class LinesWithoutCursor extends View {
                 }
                 else {
                     for (byte i = 0; i < lines.get(0)[5]; i++) {
-                        canvas.drawLine(x0, maxY + y - (y / 2 * i), x1, maxY - y - (y / 2 * i), paint);
+                        canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
                     }
                 }
                 if (first > last){
                     for (float[] temp : lines) {
-                        if (temp[0] != prev){k++;}
-                        canvas.drawLine(temp[0] - indentX, maxY + y + indent * k, temp[0] - indentX, temp[4], paint);
-                        prev = temp[0];
+                        diffX = temp[0] - lines.get(0)[0];
+                        kX = y * diffX / dX;
+                        canvas.drawLine(temp[0] - indentX, maxY + y + kX, temp[0] - indentX, temp[4], paint);
                     }
                 }
                 else if (first < last){
                     for (float[] temp : lines) {
-                        if (temp[0] != prev){k++;}
-                        canvas.drawLine(temp[0] - indentX, maxY + y + indent * k, temp[0] - indentX, temp[4], paint);
-                        prev = temp[0];
+                        diffX = temp[0] - lines.get(0)[0];
+                        kX = y * diffX / dX;
+                        canvas.drawLine(temp[0] - indentX, maxY + y + kX, temp[0] - indentX, temp[4], paint);
                     }
                 }
                 else {
@@ -407,27 +401,23 @@ public class LinesWithoutCursor extends View {
                 }
             }
             else if(first < last){
-                int k = 0;
-                float indent = y / indentT;
                 for (byte i = 0; i < lines.get(0)[5]; i++){
-                    canvas.drawLine(x0, last - y / 2 * i, x1, last - y - y / 2 * i, paint);
+                    canvas.drawLine(x0, last - y / 2 * i, x1, last + y - y / 2 * i, paint);
                 }
                 for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0] - indentX, last - indent * k, temp[0] - indentX, temp[4], paint);
-                    prev = temp[0];
+                    diffX = temp[0] - lines.get(0)[0];
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, last + kX, temp[0] - indentX, temp[4], paint);
                 }
             }
             else if(first > last){
-                int k = 0;
-                float indent = y / indentT;
                 for (byte i = 0; i < lines.get(0)[5]; i++){
-                    canvas.drawLine(x0, first - y / 2 * i, x1, first + y - y / 2 * i, paint);
+                    canvas.drawLine(x0, first - y / 2 * i, x1, first - y - y / 2 * i, paint);
                 }
                 for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0] - indentX, first + indent * k, temp[0] - indentX, temp[4], paint);
-                    prev = temp[0];
+                    diffX = temp[0] - lines.get(0)[0];
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, first - kX, temp[0] - indentX, temp[4], paint);
                 }
             }
             else {
@@ -461,10 +451,7 @@ public class LinesWithoutCursor extends View {
             }
         }
 
-        float prev = lines.get(0)[0];
         if (maxY < first && maxY < last) {
-            int k = 0;
-            float indent = Math.abs(((Math.abs(maxY - y)) - (maxY + y)) / indentT);
             if (last == first){
                 for (byte i = 0; i < lines.get(0)[5]; i++) {
                     canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
@@ -472,21 +459,21 @@ public class LinesWithoutCursor extends View {
             }
             else {
                 for (byte i = 0; i < lines.get(0)[5]; i++) {
-                    canvas.drawLine(x0, maxY - y + (y / 2 * i), x1, maxY + y + (y / 2 * i), paint);
+                    canvas.drawLine(x0, maxY - y  + (y / 2 * i), x1, maxY + (y / 2 * i), paint);
                 }
             }
             if (first > last){
                 for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0] - indentX, maxY - y + indent * k, temp[0] - indentX, temp[4], paint);
-                    prev = temp[0];
+                    diffX = temp[0] - x0;
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, maxY - y + kX, temp[0] - indentX, temp[4], paint);
                 }
             }
             else if (first < last){
                 for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0] - indentX, maxY - y + indent * k, temp[0] - indentX, temp[4], paint);
-                    prev = temp[0];
+                    diffX = temp[0] - x0;
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, maxY - y + kX, temp[0] - indentX, temp[4], paint);
                 }
             }
             else {
@@ -496,27 +483,23 @@ public class LinesWithoutCursor extends View {
             }
         }
         else if(first > last){
-            int k = 0;
-            float indent = y / indentT;
             for (byte i = 0; i < lines.get(0)[5]; i++){
                 canvas.drawLine(x0, last + y / 2 * i, x1, last - y + y / 2 * i, paint);
             }
             for (float[] temp : lines) {
-                if (temp[0] != prev){k++;}
-                canvas.drawLine(temp[0] - indentX, last - indent * k, temp[0] - indentX, temp[4], paint);
-                prev = temp[0];
+                diffX = temp[0] - x0;
+                kX = y * diffX / dX;
+                canvas.drawLine(temp[0] - indentX, last - kX, temp[0] - indentX, temp[4], paint);
             }
         }
         else if(first < last){
-            int k = 0;
-            float indent = y / indentT;
             for (byte i = 0; i < lines.get(0)[5]; i++){
                 canvas.drawLine(x0, first + y / 2 * i, x1, first + y + y / 2 * i, paint);
             }
             for (float[] temp : lines) {
-                if (temp[0] != prev){k++;}
-                canvas.drawLine(temp[0] - indentX, first + indent * k, temp[0] - indentX, temp[4], paint);
-                prev = temp[0];
+                diffX = temp[0] - x0;
+                kX = y * diffX / dX;
+                canvas.drawLine(temp[0] - indentX, first + kX, temp[0] - indentX, temp[4], paint);
             }
         }
         else {

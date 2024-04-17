@@ -28,7 +28,7 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-    private File file = new File("/storage/emulated/0/download/Ball1.mid");
+    private File file = new File("/storage/emulated/0/download/Ball3.mid");
     MidiFile midiFile;
     private int trackNumber = 0;
 
