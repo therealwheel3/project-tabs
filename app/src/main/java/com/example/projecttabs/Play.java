@@ -249,6 +249,12 @@ public class Play extends AppCompatActivity {
 
     private void updateLine(int resolution, boolean direction){
         line = new LinesWithoutCursor(Play.this);
+        if (direction) {
+            n++;
+        } else {
+            n--;
+        }
+
         try {
             line.setPrevLigas(Packer.ligaSet(map.get(n - 1)));
         } catch (Exception ignored){}
@@ -256,12 +262,6 @@ public class Play extends AppCompatActivity {
             line.setNextLigas(Packer.ligaSet(map.get(n + 1)));
         } catch (Exception ignored){}
 
-
-        if (direction) {
-            n++;
-        } else {
-            n--;
-        }
         line.setData(map.get(n), key, nominator, denominator, MusicalConstants.getIndent(key), n, resolution, n + 1);
         if (currentTact) {
             line1.removeAllViews();
