@@ -10,6 +10,8 @@ import android.view.View;
 import com.example.projecttabs.midi.util.Packer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 
 public class LinesWithCursor extends View {
     private Cursor cursor;
@@ -21,6 +23,8 @@ public class LinesWithCursor extends View {
     private int numberOfBar = 0;
     private int resolution = 480;
     private int tactNumber = 1;
+    private HashSet<Integer> prevLigas = new HashSet<>();
+    private HashSet<Integer> nextLigas = new HashSet<>();
     public LinesWithCursor(Context context) {super(context);}
 
     @Override
@@ -71,6 +75,9 @@ public class LinesWithCursor extends View {
                 (float) (cursor.getXValue() + cursor.getMoveX()),
                 (float) (cursor.getYValue() + cursor.getMoveY() * 2), paint);
     }
+    public void setCursorX(Cursor cursor) {
+        this.cursor = cursor;
+    }
 
     public void setData(ArrayList<float[]> data, int key, int nominator, int denominator, int verticalIndent,
                         int numberOfBar, int resolution, int tactNumber){
@@ -85,11 +92,9 @@ public class LinesWithCursor extends View {
     }
     private void drawSize(float x, float y1, float y2, int nom, int den, Canvas canvas, Paint paint){
         paint.setStrokeWidth(3);
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
         canvas.drawText(nom + "", x, y1, paint);
         canvas.drawText(den + "", x, y2, paint);
-    }
-    public void setCursorX(Cursor cursor) {
-        this.cursor = cursor;
     }
 
     private void drawKey(float x, float y, int key, Canvas canvas, Paint paint){
@@ -107,38 +112,44 @@ public class LinesWithCursor extends View {
         }
     }
 
-    private void drawNote(boolean line, float x, float y, float moveX, float moveY, int n, Canvas canvas, Paint paint, boolean flag){
+    private void drawNote(boolean line, float x, float y, float moveX, float moveY, float n, Canvas canvas, Paint paint, boolean flag){
         if (flag){moveY *= -1; moveX *= -1;}
         paint.setStrokeWidth(5);
-        if (n != 1 && line){canvas.drawLine(x + moveX, y, x + moveX, y - moveY * 8, paint);} // draw stick
-        if (n <= 1){
+        if (n > 1 && line){canvas.drawLine(x + moveX, y, x + moveX, y - moveY * 10, paint); Log.d("draw add line", "true");} // draw stick
+        if (n <= 2){
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawOval(x - moveX, y - moveY, x + moveX, y + moveY, paint);
         }
-        else if (n <= 6){
+        else {
             paint.setStyle(Paint.Style.FILL_AND_STROKE);
             canvas.drawOval(x - moveX, y - moveY, x + moveX, y + moveY, paint);
             if (line) {
-                for (int i = 0; i < n - 2; i++) {
+                for (int i = 0; i < (Math.log(n) / Math.log(2)) - 2; i++) {
                     canvas.drawLine(x + moveX, y - moveY * (10 - i), x + moveX * 2, y - moveY * ((5 - i) - 1), paint);
                 }
             }
         }
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        paint.setStrokeWidth(7);
+        for (float i = 2; i != 32; i *= 2){
+            if ((float)(i / 3) == n){canvas.drawOval((float) (x + moveX * 1.5 - 2), y - 2,
+                    (float) (x + moveX * 1.5 + 2), y + 2, paint); break;}
+        }
     }
 
-    private void drawNote(boolean line, float x, float y, float moveX, float moveY, int n, Canvas canvas, Paint paint, boolean flag, boolean alt){
+    private void drawNote(boolean line, float x, float y, float moveX, float moveY, float n, Canvas canvas, Paint paint, boolean flag, boolean alt){
         if (flag){moveY *= -1; moveX *= -1;}
         paint.setStrokeWidth(5);
-        if (n != 1 && line){canvas.drawLine(x + moveX, y, x + moveX, y - moveY * 10, paint);} // draw stick
-        if (n <= 1){
+        if (n > 1 && line){canvas.drawLine(x + moveX, y, x + moveX, y - moveY * 10, paint); Log.d("draw add line", "true");} // draw stick
+        if (n <= 2){
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawOval(x - moveX, y - moveY, x + moveX, y + moveY, paint);
         }
-        else if (n <= 6){
+        else {
             paint.setStyle(Paint.Style.FILL_AND_STROKE);
             canvas.drawOval(x - moveX, y - moveY, x + moveX, y + moveY, paint);
             if (line) {
-                for (int i = 0; i < n - 2; i++) {
+                for (int i = 0; i < (Math.log(n) / Math.log(2)) - 2; i++) {
                     canvas.drawLine(x + moveX, y - moveY * (10 - i), x + moveX * 2, y - moveY * ((5 - i) - 1), paint);
                 }
             }
@@ -152,6 +163,12 @@ public class LinesWithCursor extends View {
             paint.setTextSize(50);
             canvas.drawText("♮", (float) (x - moveX * 2.5), (float) (y + moveY), paint);
         }
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        paint.setStrokeWidth(7);
+        for (float i = 2; i != 32; i *= 2){
+            if ((float)(i / 3) == n){canvas.drawOval((float) (x + moveX * 1.5 - 2), y - 2,
+                    (float) (x + moveX * 1.5 + 2), y + 2, paint); break;}
+        }
     }
 
     private void drawPause(float x, float y, float moveX, int n, Canvas canvas, Paint paint) {
@@ -160,13 +177,15 @@ public class LinesWithCursor extends View {
         //whitePaint.setStyle(Paint.Style.FILL_AND_STROKE);
         //whitePaint.setColor(Color.WHITE);
         paint.setTextSize(75);
+        Log.d(x + "", n + "");
         paint.setStyle(Paint.Style.FILL_AND_STROKE);
-        if (n < 2) {
+        if (n < 4) {
             paint.setStrokeWidth(4);
         }
         else {
             paint.setStrokeWidth(1);
         }
+
         if (n <= 1) canvas.drawRect(x, y * 14, x + moveX, y * 14 + y / 2, paint);
         else if (n <= 2) canvas.drawRect(x, (float) (y * 14.5), x + moveX, (float) (y * 14.5 + y / 2), paint);
         else if (n <= 4) canvas.drawText("\uD834\uDD3D", x, y * 19, paint);
@@ -186,11 +205,13 @@ public class LinesWithCursor extends View {
 
         ArrayList<Float> triols = new ArrayList<>();
         ArrayList<Float> quintols = new ArrayList<>();
+        ArrayList<float[]> ligas = new ArrayList<>();
 
         // draw notes
         for (float[] note : notes){
-            int size = (int) (Math.log(note[1]) / Math.log(2));
+            float size = note[1];
             if (note.length >= 6){
+                if (note.length == 7){ligas.add(note);}
                 move = getMove(note[3]);
                 if (note[1] >= 8 && note[5] == group){
                     lines.add(new float[]{2 * x + (x1 * (note[0] - n)) + (x / 3) + (x / 6),
@@ -213,7 +234,7 @@ public class LinesWithCursor extends View {
                 }
                 else {
                     if (!lines.isEmpty()){
-                        drawLines(lines, y * 2, paint, canvas);
+                        drawLines(lines, y * 2, x, paint, canvas);
                         lines.clear();
                     }
                     group = note[5];
@@ -303,31 +324,124 @@ public class LinesWithCursor extends View {
                 }
             }
             else {
-                drawPause(2 * x + (x1 * (note[0] - n)) + (x / 3), y, x / 3, size, canvas, paint);
+                drawPause(2 * x + (x1 * (note[0] - n)) + (x / 3), y, x / 3, (int) size, canvas, paint);
             }
             move = 0;
         }
-        if (!lines.isEmpty()) drawLines(lines, y * 2, paint, canvas);
+        if (!ligas.isEmpty()) drawLigas(ligas, x / 6, y / 2, x, y, x1, n, canvas);
+        if (!lines.isEmpty()) drawLines(lines, y * 2, x, paint, canvas);
         lines.clear();
     }
-    private void drawLines(ArrayList<float[]> lines, float y, Paint paint, Canvas canvas){
+    private void drawLines(ArrayList<float[]> lines, float y, float x, Paint paint, Canvas canvas){
         // new float[]{indent + x + (x1 * (note[0] - n)) + (x / 3) + (x / 6),
         // note[1], note[3], (y * (26 - move) - y * 5), y * (26 - move),
         // (float) (Math.log(note[1]) / Math.log(2)) - 3}
         paint.setStrokeWidth(5);
         float x0 = lines.get(0)[0]; // first and last note x
         float x1 = lines.get(lines.size() - 1)[0];
+        float dX = x1 - x0;
         float maxY = 999999;
         float first = 999999;
         float last = 999999;
-        float minn = 999999;
         float tick = -1;
         int indentT = -1;
-        float maxx = 0;
-        for (float[] temp : lines){
-            if (temp[4] > maxx && temp[0] == lines.get(0)[0]){
-                maxx = temp[4];
+        float indentX = 0;
+        float diffX;
+        float kX;
+        boolean direction = Packer.stickDirection(lines, y * 7);
+        if (direction){
+            for (int i = 0; i < lines.size(); i++){
+                lines.get(i)[3] = (float) (lines.get(i)[4] + y * 2.5);
             }
+        }
+
+
+        if (direction){
+            x0 -= x / 3;
+            x1 -= x / 3;
+            indentX = x / 3;
+            maxY = 0;
+            first = 0;
+            last = 0;
+
+            for (float[] temp : lines){
+                if (temp[3] > first && temp[0] == lines.get(0)[0]){
+                    first = temp[3];
+                }
+                if (temp[3] > last && temp[0] == lines.get(lines.size() - 1)[0]){
+                    last = temp[3];
+                }
+                if (temp[3] > maxY){
+                    maxY = temp[3];
+                }
+                if (tick != temp[0]){indentT++;}
+                tick = temp[0];
+            }
+
+
+            if (maxY > first && maxY > last) {
+                if (last == first){
+                    for (byte i = 0; i < lines.get(0)[5]; i++) {
+                        canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
+                    }
+                }
+                else {
+                    for (byte i = 0; i < lines.get(0)[5]; i++) {
+                        canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
+                    }
+                }
+                if (first > last){
+                    for (float[] temp : lines) {
+                        diffX = temp[0] - lines.get(0)[0];
+                        kX = y * diffX / dX;
+                        canvas.drawLine(temp[0] - indentX, maxY + y + kX, temp[0] - indentX, temp[4], paint);
+                    }
+                }
+                else if (first < last){
+                    for (float[] temp : lines) {
+                        diffX = temp[0] - lines.get(0)[0];
+                        kX = y * diffX / dX;
+                        canvas.drawLine(temp[0] - indentX, maxY + y + kX, temp[0] - indentX, temp[4], paint);
+                    }
+                }
+                else {
+                    for (float[] temp : lines) {
+                        canvas.drawLine(temp[0] - indentX, maxY, temp[0] - indentX, temp[4], paint);
+                    }
+                }
+            }
+            else if(first < last){
+                for (byte i = 0; i < lines.get(0)[5]; i++){
+                    canvas.drawLine(x0, last - y / 2 * i, x1, last + y - y / 2 * i, paint);
+                }
+                for (float[] temp : lines) {
+                    diffX = temp[0] - lines.get(0)[0];
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, last + kX, temp[0] - indentX, temp[4], paint);
+                }
+            }
+            else if(first > last){
+                for (byte i = 0; i < lines.get(0)[5]; i++){
+                    canvas.drawLine(x0, first - y / 2 * i, x1, first - y - y / 2 * i, paint);
+                }
+                for (float[] temp : lines) {
+                    diffX = temp[0] - lines.get(0)[0];
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, first - kX, temp[0] - indentX, temp[4], paint);
+                }
+            }
+            else {
+                for (byte i = 0; i < lines.get(0)[5]; i++){
+                    canvas.drawLine(x0, first - y / 2 * i, x1, first - y / 2 * i, paint);
+                }
+                for (float[] temp : lines) {
+                    canvas.drawLine(temp[0] - indentX, first, temp[0] - indentX, temp[4], paint);
+                }
+            }
+            return;
+        }
+
+        for (float[] temp : lines){
             if (temp[3] < first && temp[0] == lines.get(0)[0]){
                 first = temp[3];
             }
@@ -347,71 +461,63 @@ public class LinesWithCursor extends View {
             }
         }
 
-        float prev = lines.get(0)[0];
         if (maxY < first && maxY < last) {
-            int k = 0;
-            float indent = Math.abs(((Math.abs(maxY - y)) - (maxY + y)) / indentT);
-            for (byte i = 0; i < lines.get(0)[5]; i++){
-                canvas.drawLine(x0, maxY - y + (y / 2 * i), x1, maxY + y + (y / 2 * i), paint);
-            }
-            if (first > last){
-                Log.d("sadasdsa", "1");
-                for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0], maxY - y + indent * k, temp[0], temp[4], paint);
-                    prev = temp[0];
-                }
-            }
-            else if (first < last){
-                Log.d("sadasdsa", "2");
-                for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0], maxY - y + indent * k, temp[0], temp[4], paint);
-                    prev = temp[0];
+            if (last == first){
+                for (byte i = 0; i < lines.get(0)[5]; i++) {
+                    canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
                 }
             }
             else {
-                Log.d("sadasdsa", "3");
+                for (byte i = 0; i < lines.get(0)[5]; i++) {
+                    canvas.drawLine(x0, maxY - y  + (y / 2 * i), x1, maxY + (y / 2 * i), paint);
+                }
+            }
+            if (first > last){
                 for (float[] temp : lines) {
-                    if (temp[0] != prev){k++;}
-                    canvas.drawLine(temp[0], maxY - y + indent * k, temp[0], temp[4], paint);
-                    prev = temp[0];
+                    diffX = temp[0] - x0;
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, maxY - y + kX, temp[0] - indentX, temp[4], paint);
+                }
+            }
+            else if (first < last){
+                for (float[] temp : lines) {
+                    diffX = temp[0] - x0;
+                    kX = y * diffX / dX;
+                    canvas.drawLine(temp[0] - indentX, maxY - y + kX, temp[0] - indentX, temp[4], paint);
+                }
+            }
+            else {
+                for (float[] temp : lines) {
+                    canvas.drawLine(temp[0] - indentX, maxY, temp[0] - indentX, temp[4], paint);
                 }
             }
         }
         else if(first > last){
-            int k = 0;
-            float indent = y / indentT;
             for (byte i = 0; i < lines.get(0)[5]; i++){
                 canvas.drawLine(x0, last + y / 2 * i, x1, last - y + y / 2 * i, paint);
             }
-            Log.d("sadasdsa", "4");
             for (float[] temp : lines) {
-                if (temp[0] != prev){k++;}
-                canvas.drawLine(temp[0], last - indent * k, temp[0], temp[4], paint);
-                prev = temp[0];
+                diffX = temp[0] - x0;
+                kX = y * diffX / dX;
+                canvas.drawLine(temp[0] - indentX, last - kX, temp[0] - indentX, temp[4], paint);
             }
         }
         else if(first < last){
-            int k = 0;
-            Log.d("sadasdsa", "5");
-            float indent = y / indentT;
             for (byte i = 0; i < lines.get(0)[5]; i++){
                 canvas.drawLine(x0, first + y / 2 * i, x1, first + y + y / 2 * i, paint);
             }
             for (float[] temp : lines) {
-                if (temp[0] != prev){k++;}
-                canvas.drawLine(temp[0], first + indent * k, temp[0], temp[4], paint);
-                prev = temp[0];
+                diffX = temp[0] - x0;
+                kX = y * diffX / dX;
+                canvas.drawLine(temp[0] - indentX, first + kX, temp[0] - indentX, temp[4], paint);
             }
         }
         else {
-            Log.d("sadasdsa", "6");
             for (byte i = 0; i < lines.get(0)[5]; i++){
                 canvas.drawLine(x0, first + y / 2 * i, x1, first + y / 2 * i, paint);
             }
             for (float[] temp : lines) {
-                canvas.drawLine(temp[0], first, temp[0], temp[4], paint);
+                canvas.drawLine(temp[0] - indentX, first, temp[0] - indentX, temp[4], paint);
             }
         }
     }
@@ -426,5 +532,53 @@ public class LinesWithCursor extends View {
         }
         return (int)(move - key * 1.5);
 
+    }
+
+    private void drawLigas(ArrayList<float[]> ligas, float resolution, float moveY, float x, float y, float k, float n, Canvas canvas){
+        Paint paint = new Paint();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(Color.BLACK);
+        paint.setStrokeWidth(3);
+        float move = getMove(ligas.get(0)[3]);;
+        float top = (y * (27 - move) - moveY * 4);
+        float bottom = (y * (27 - move) + moveY * 4);
+        for (int i = 0; i < ligas.size(); i++){
+            move = getMove(ligas.get(i)[3]);
+            top = (y * (27 - move) - moveY * 4);
+            bottom = (y * (27 - move) + moveY * 4);
+            if (prevLigas.contains((int) ligas.get(i)[6])){ // for prev ligas
+                canvas.drawArc(2 * x, top,
+                        (float) (2 * x + (k * (ligas.get(i)[0] - n))) + x / 6, bottom,
+                        270, 90, false, paint);
+                prevLigas.remove((int) ligas.get(i)[6]);
+            }
+            for (int j = i + 1; j < ligas.size(); j++){ // for current ligas
+                if (ligas.get(i)[6] == ligas.get(j)[6]){
+                    canvas.drawArc((float) (2 * x + (k * (ligas.get(i)[0] - n))) + x / 6, top,
+                            (float) (2 * x + (k * (ligas.get(j)[0] - n))) + x / 6, bottom,
+                            180, 180,  false, paint);
+                }
+            }
+        }
+        Collections.reverse(ligas);
+        for (float[] temp : ligas){ // for next ligas
+            if (nextLigas.contains((int) temp[6])){
+                move = getMove(temp[3]);;
+                top = (y * (27 - move) - moveY * 4);
+                bottom = (y * (27 - move) + moveY * 4);
+                canvas.drawArc((float)  (2 * x + (k * (temp[0] - n))) + x / 6, top,
+                        x * 10 + (float) (2 * x + (k * (temp[0] - n))) + x / 6, bottom,
+                        180, 180,  false, paint);
+                nextLigas.remove((int) temp[6]);
+            }
+        }
+    }
+
+    public void setPrevLigas(HashSet<Integer> prevLigas) {
+        this.prevLigas = prevLigas;
+    }
+
+    public void setNextLigas(HashSet<Integer> nextLigas) {
+        this.nextLigas = nextLigas;
     }
 }

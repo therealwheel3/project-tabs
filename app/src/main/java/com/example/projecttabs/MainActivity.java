@@ -11,6 +11,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -44,8 +45,6 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(MainActivity.this, "android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[] { "android.permission.READ_EXTERNAL_STORAGE" }, 1);
         }
-
-
 
         setContentView(R.layout.activity_main);
         try {
@@ -130,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, Play.class);
                 intent.putExtra("trackIndex", trackNumber);
+                intent.putExtra("filePath", file.getPath());
                 startActivity(intent);
             }
         });
@@ -158,6 +158,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        Button button = findViewById(R.id.menu_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("audio/*");
+                startActivityForResult(intent, 10);
+            }
+        });
     }
 
     @Override
@@ -174,5 +183,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 10){
+            file = new File(data.getData().getPath().split(":")[1]);
+            Log.d("sdsd", data.getData().getPath().split(":")[1]);
+        }
+    }
 }

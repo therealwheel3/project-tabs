@@ -34,7 +34,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Play extends AppCompatActivity {
-    private final File file = new File("/storage/emulated/0/download/Ball1.mid");
+    private File file = new File("/storage/emulated/0/download/Ball3.mid");
     MidiFile midiFile;
     boolean currentTact = true;
     int tactsCount;
@@ -75,6 +75,8 @@ public class Play extends AppCompatActivity {
         bpmView = findViewById(R.id.BPM);
         Bundle arguments = getIntent().getExtras();
         trackNumber = (int) arguments.get("trackIndex");
+        Log.d("sdsdsdsdss", arguments.get("filePath").toString());
+        file = new File(arguments.get("filePath").toString());
 
 
         Button playButton = findViewById(R.id.playButton);

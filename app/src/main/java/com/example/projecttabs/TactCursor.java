@@ -14,6 +14,7 @@ public class TactCursor extends View {
     int ms = 0;
     int maxMs;
     int bpm;
+
     public TactCursor(Context context) {super(context);}
 
     @Override
