@@ -1,6 +1,8 @@
 package com.example.projecttabs;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -26,12 +28,18 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 public class MainActivity extends AppCompatActivity {
+    public static final String APP_PREFERENCES = "mysettings";
     private File file = new File("/storage/emulated/0/download/Ball3.mid");
+    ArrayList<float[]> fmap;
+    ArrayList<ArrayList<float[]>> map;
     MidiFile midiFile;
     private int trackNumber = 0;
+    SharedPreferences mSettings;
+    SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         LinearLayout line1 = findViewById(R.id.firstLine);
-        LinearLayout line2 = findViewById(R.id.secondLine);
         TextView trackNumberField = findViewById(R.id.TrackNumber);
 
 
@@ -63,22 +70,19 @@ public class MainActivity extends AppCompatActivity {
         linesWithCursor.setCursorX(cursor);
         LinesWithCursor tempLine1 = linesWithCursor;
 
-        LinesWithCursor linesWithCursor1 = new LinesWithCursor(this);
-        linesWithCursor1.setCursorX(cursor);
-        LinesWithCursor tempLine2 = linesWithCursor1;
-
+        mSettings = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+        editor = mSettings.edit();
+        file = new File(Objects.requireNonNull(mSettings.getString("filePath", "/storage/emulated/0/download/Ball3.mid")));
         int resolution = midiFile.getResolution();
         List<MidiTrack> tracks = midiFile.getTracks();
         ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(0).getEvents());
         ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
         ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
-        ArrayList<float[]> data = new ArrayList<>();
+        Log.d("s,k,sskdksd", map.get(0).toString());
         tempLine1.setData(map.get(0), 0, 4, 4,
                 MusicalConstants.getIndent(0), 0, midiFile.getResolution() * 4, 1);
-        tempLine2.setData(data, 1, 4, 4,
-                MusicalConstants.getIndent(1), 1, midiFile.getResolution() * 4, 2);
         line1.addView(tempLine1);
-        line2.addView(tempLine2);
+
 
 
         ImageButton arrowDown = (android.widget.ImageButton) findViewById(R.id.downArrow);
@@ -187,8 +191,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 10){
-            file = new File(data.getData().getPath().split(":")[1]);
-            Log.d("sdsd", data.getData().getPath().split(":")[1]);
+            if (!data.getData().getPath().equals("")){
+                String path = data.getData().getPath().split(":")[1];
+                file = new File(path);
+                editor.putString("filePath", path);
+                editor.apply();
+            }
+            try {
+                midiFile = new MidiFile(file);
+            } catch (IOException e) {
+                Log.d("midifile", "open failed");
+            }
+            int resolution = midiFile.getResolution();
+            List<MidiTrack> tracks = midiFile.getTracks();
+            ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(0).getEvents());
+            ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
+            ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
+
         }
     }
 }
