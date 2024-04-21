@@ -649,4 +649,15 @@ public class Packer {
         }
         return down > up;
     }
+
+    public static int getMove(float note, int key){
+        float move = 0;
+        for (int i = 0; i < note; i++){
+            if (i % 12 == 4 || i % 12 == 11){
+                move += 1;
+            }
+            else {move += 0.5;}
+        }
+        return (int)(move - key * 1.5);
+    }
 }

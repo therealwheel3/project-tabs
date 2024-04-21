@@ -535,7 +535,6 @@ public class LinesWithoutCursor extends View {
             else {move += 0.5;}
         }
         return (int)(move - key * 1.5);
-
     }
 
     private void drawLigas(ArrayList<float[]> ligas, float resolution, float moveY, float x, float y, float k, float n, Canvas canvas){

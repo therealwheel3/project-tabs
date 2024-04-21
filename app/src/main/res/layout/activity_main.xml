@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:screenOrientation="landscape"
+    android:background="@color/white"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -46,8 +47,8 @@
             android:id="@+id/instrumentPanel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:orientation="vertical"/>
+            android:layout_weight="2"
+            android:orientation="vertical" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -118,7 +119,7 @@
         android:layout_height="0dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/linearLayout3"
+        app:layout_constraintEnd_toStartOf="@+id/notes"
         app:layout_constraintStart_toEndOf="@+id/linearLayout10"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -170,6 +171,11 @@
             android:layout_weight="5"
             android:orientation="horizontal">
 
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
             <ImageButton
                 android:id="@+id/prevTrack"
                 android:layout_width="match_parent"
@@ -200,24 +206,173 @@
                 android:background="@color/white"
                 android:src="@drawable/rightarrow" />
 
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
         </LinearLayout>
 
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/linearLayout3"
+        android:id="@+id/notes"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:orientation="vertical"
+        android:gravity="bottom"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <Button
-            android:id="@+id/button19"
+            android:id="@+id/button24"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Button" />
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:backgroundTint="@color/main_theme"
+            android:text="split" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="bottom"
+                android:orientation="vertical">
+
+                <ImageButton
+                    android:id="@+id/leftMultiol"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/white"
+                    android:src="@drawable/uparrow" />
+
+                <TextView
+                    android:id="@+id/multiol"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="3"
+                    android:textAlignment="center" />
+
+                <ImageButton
+                    android:id="@+id/rightMultiol"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/white"
+                    android:src="@drawable/downarrow" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="bottom"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/upNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/black"
+                    android:text="♯"
+                    android:gravity="center"
+                    android:textSize="20dp" />
+
+                <Button
+                    android:id="@+id/altSign"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/black"
+                    android:text="♮"
+                    android:gravity="center"
+                    android:textSize="20dp"/>
+
+                <Button
+                    android:id="@+id/downNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/white"
+                    android:textColor="@color/black"
+                    android:text="♭"
+                    android:gravity="center"
+                    android:textSize="30dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/sizeLeft"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:backgroundTint="@color/main_theme"
+                android:text="-" />
+
+            <TextView
+                android:id="@+id/noteSize"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="3"
+                android:gravity="center"
+                android:text="4" />
+
+            <Button
+                android:id="@+id/sizeRight"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:backgroundTint="@color/main_theme"
+                android:text="+" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/baseButtons"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/imageButton2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="@color/white"
+                android:src="@drawable/pause" />
+
+            <ImageButton
+                android:id="@+id/imageButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="@color/white"
+                android:src="@drawable/n4" />
+
+        </LinearLayout>
     </LinearLayout>
 
 

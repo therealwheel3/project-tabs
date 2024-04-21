@@ -48,8 +48,6 @@ public class MainActivity extends AppCompatActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 
-        Cursor cursor = new Cursor(this, 0, 0);
-
         if (ContextCompat.checkSelfPermission(MainActivity.this, "android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[] { "android.permission.READ_EXTERNAL_STORAGE" }, 1);
         }
@@ -67,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         LinesWithCursor linesWithCursor = new LinesWithCursor(this);
-        linesWithCursor.setCursorX(cursor);
         LinesWithCursor tempLine1 = linesWithCursor;
 
         mSettings = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
@@ -78,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(0).getEvents());
         ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
         ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
-        Log.d("s,k,sskdksd", map.get(0).toString());
         tempLine1.setData(map.get(0), 0, 4, 4,
                 MusicalConstants.getIndent(0), 0, midiFile.getResolution() * 4, 1);
         line1.addView(tempLine1);
@@ -86,46 +82,12 @@ public class MainActivity extends AppCompatActivity {
 
 
         ImageButton arrowDown = (android.widget.ImageButton) findViewById(R.id.downArrow);
-        arrowDown.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (cursor.getYValue() < cursor.getMoveY() * 25 || cursor.getYValue() == 0){
-                    cursor.setYValue((float) (cursor.getYValue() + cursor.getMoveY()));
-                    tempLine1.invalidate();}
-            }
-        });
 
         ImageButton arrowUp = (android.widget.ImageButton) findViewById(R.id.upArrow);
-        arrowUp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (cursor.getYValue() > 0){
-                cursor.setYValue((float) (cursor.getYValue() - cursor.getMoveY()));
-                tempLine1.invalidate();}
-            }
-        });
 
         ImageButton arrowRight = (android.widget.ImageButton) findViewById(R.id.rightArrow);
-        arrowRight.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d("asdasd", cursor.getXValue() + " " + cursor.getMoveX() * 7.5 + " " + (cursor.getXValue() < cursor.getMoveX() * 7.5));
-                if (cursor.getXValue() < cursor.getMoveX() * 7.5){
-                    cursor.setXValue((float) (cursor.getXValue() + cursor.getMoveX()));
-                    tempLine1.invalidate();}
-            }
-        });
 
         ImageButton arrowLeft = (android.widget.ImageButton) findViewById(R.id.leftArrow);
-        arrowLeft.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (cursor.getXValue() > cursor.getMoveX()){
-                    cursor.setXValue((float) (cursor.getXValue() - cursor.getMoveX()));
-                    tempLine1.invalidate();
-                }
-            }
-        });
 
         Button playButton = findViewById(R.id.playButton);
         playButton.setOnClickListener(new View.OnClickListener() {

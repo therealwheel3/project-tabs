@@ -21,9 +21,9 @@ public class TactCursor extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (xCoord == 0) {
-            xCoord = (float) (2 * (getWidth() * 0.1) + ((getWidth() * 0.1) / 3));
+            xCoord = (float) (2 * (getWidth() * 0.1) + ((getWidth() * 0.1) / 6));
         }
-        if (bpm != 0)  xCoord += (float) (getWidth() * 0.8 * 14.5 / 1655);
+        if (bpm != 0)  xCoord += (float) (getWidth() * 0.8 / maxMs * 20);
         Paint paint = new Paint();
         paint.setColor(Color.WHITE);
         paint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -35,8 +35,8 @@ public class TactCursor extends View {
                 xCoord + 30, currentTact ? (float) (getHeight() * 0.25) : (float) (getHeight() * 0.75), paint);
         canvas.drawLine(xCoord, currentTact ? 0 : getHeight(),
                 xCoord - 30, currentTact ? (float) (getHeight() * 0.25) : (float) (getHeight() * 0.75), paint);
-        ms++;
-        if (ms == maxMs){ms = 0; xCoord = 0;}
+        ms += 20;
+        if (ms >= maxMs){ms = 0; xCoord = 0;}
     }
 
     public void setData(int bpm, int maxMs){

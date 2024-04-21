@@ -111,7 +111,7 @@ public class Play extends AppCompatActivity {
 
         int tactTime = (int) ((60000 / mainInfo[0]) * mainInfo[1]); // !!!!!
         initialSetup(resolution * 4);
-        tactCursor.setData((int) mainInfo[0], (int) (tactTime / mainInfo[1]));
+        tactCursor.setData((int) mainInfo[0], tactTime);
 
         Log.d("saasdasadaadwadawdaw", tactTime + " " + mainInfo[0]);
 
@@ -136,7 +136,7 @@ public class Play extends AppCompatActivity {
                                 tactCursor.invalidate();
                             }
                         });
-                    }}, 0, 1);
+                    }}, 0, 20);
 
                 if (!isChanged) {
                     timer.scheduleAtFixedRate(new TimerTask() {
@@ -158,7 +158,7 @@ public class Play extends AppCompatActivity {
                         }}, tactTime, tactTime);
                 }
                 else {
-                    mediaPlayer.seekTo((n - 2) * tactTime);
+                    mediaPlayer.seekTo((n - 1) * tactTime);
                     isChanged = false;
                     timer.scheduleAtFixedRate(new TimerTask() {
                         @Override
