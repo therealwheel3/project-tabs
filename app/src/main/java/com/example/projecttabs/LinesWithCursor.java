@@ -71,12 +71,12 @@ public class LinesWithCursor extends View {
         this.cursor = cursor;
     }
 
-    public void setData(ArrayList<float[]> data, int key, int nominator, int denominator, int verticalIndent,
+    public void setData(ArrayList<float[]> data, int key, float nominator, float denominator, int verticalIndent,
                         int numberOfBar, int resolution, int tactNumber){
         this.data = data;
         this.key = key;
-        this.nominator = nominator;
-        this.denominator = denominator;
+        this.nominator = (int) nominator;
+        this.denominator = (int) denominator;
         this.verticalIndent = verticalIndent;
         this.numberOfBar = numberOfBar;
         this.resolution = resolution;
@@ -586,4 +586,5 @@ public class LinesWithCursor extends View {
     public void setNextLigas(HashSet<Integer> nextLigas) {
         this.nextLigas = nextLigas;
     }
+
 }

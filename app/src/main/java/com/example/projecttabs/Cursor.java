@@ -5,6 +5,7 @@ import com.example.projecttabs.midi.util.MusicalConstants;
 import com.example.projecttabs.midi.util.Packer;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 class Cursor {
     private int tick = 0;
@@ -12,10 +13,12 @@ class Cursor {
     private int note;
     private int duration = 4;
     private int maxTick;
-    boolean[][] tempAlts = new boolean[11][5];
+    private HashSet<Integer> tempDiez = new HashSet<>();
+    private HashSet<Integer> tempBemol = new HashSet<>();
     private int[] alts = new int[5];
     private int currAlt = 0;
     private ArrayList<float[]> notes = new ArrayList<>();
+    private int currentNote = 0;
     private float K;
     private int resolution = 480 * 4;
     private int groupResolution = 480;
@@ -26,41 +29,87 @@ class Cursor {
         this.note = 23;
     }
 
-    public void setData(int resolution, int[] alts, int maxTick, int n){
+    Cursor(){
+        this.key = 0;
+        this.note = 23;
+    }
+
+    public void setData(int resolution, int[] alts, int maxTick, int n, int groupResolution){
         this.resolution = resolution;
         this.alts = alts;
         this.maxTick = maxTick;
         this.n = n;
+        this.groupResolution = groupResolution;
+    }
+
+    public void setNotes(ArrayList<float[]> notes) {
+        this.notes = notes;
+        for (float[] temp : notes){
+            if (temp[4] == 1){
+                tempDiez.add((int) temp[3]);
+            }
+            if (temp[4] == -2){
+                tempBemol.add((int) temp[3]);
+            }
+        }
     }
 
     public void setK(float k) {
         K = k;
     }
 
+    public void setAltSign(int sign){
+        if (currAlt != sign) {
+            if (currAlt == -1 && sign == 1){
+                note += 2;
+                currAlt = sign;
+            }
+            else if (currAlt == 1 && sign == -1){
+                note -= 2;
+                currAlt = sign;
+            }
+            if (currAlt == -1 && sign == -2){
+                note += 1;
+                currAlt = -2;
+            }
+            if (currAlt == 1 && sign == -2){
+                note -= 1;
+                currAlt = -2;
+            }
+        }
+        else{
+            if (sign == 1){
+                note--;
+            }
+            else if (sign == -2){
+                note++;
+            }
+        }
+    }
+
     public void upNote() {
         if (note < MusicalConstants.getMax(key)) {
-            if (!((note % 12) == 4 || (note % 12) == 11)) {
+            note++;
+            int a = note % 12;
+            if (a == 1 || a == 3 || a == 6 || a == 8 || a == 10) {
                 currAlt = currAlt == 0 ? 1 : 0;
             }
-            note++;
         }
     }
 
     public void downNote() {
         if (note > 0) {
-            if (!((note % 12) == 5 || (note % 12) == 0)) {
+            note--;
+            int a = note % 12;
+            if (a == 1 || a == 3 || a == 6 || a == 8 || a == 10) {
                 currAlt = currAlt == 0 ? -2 : 0;
             }
-            note--;
         }
     }
 
     public void rightNote(){
         if (tick + resolution / duration < maxTick){
             tick += resolution / duration;
-        }
-        if (!isNote()){
-            placePause();
         }
     }
 
@@ -83,20 +132,33 @@ class Cursor {
     }
 
     public void placeNote(){
-        deleteThisPauses();
-        notes.add(new float[]{tick, duration, resolution / duration,
-                note + MusicalConstants.getIndent(key), currAlt});
-        if (currAlt != 0){
-            if (currAlt == 1 && !tempAlts[note / 12][note % 12]) { // !!!!!!!!!!!!!
-                tempAlts[note / 12][note % 12] = true;
+        if (!isContain()) {
+            if (currAlt == 1 && !tempDiez.contains(note)) { // !!!!!!!!!!!!!
+                if (!tempBemol.contains(note)) tempDiez.add(note);
+            } else if (currAlt == 1 && tempDiez.contains(note)) { // !!!!!!!!!!!!!
+                if (!tempBemol.contains(note)) tempDiez.add(note);
                 currAlt = 0;
             }
+            if (tempDiez.contains(note + 1) && note % 12 != 4 && note % 12 != 11) {
+                currAlt = -1;
+            }
+            if (currAlt == -2 && !tempBemol.contains(note)) {
+                if (!tempDiez.contains(note)) tempBemol.add(note);
+            } else if (currAlt == -2 && tempBemol.contains(note)) {
+                if (!tempDiez.contains(note)) tempBemol.add(note);
+                currAlt = 0;
+            }
+            if (tempBemol.contains(note - 1) && note % 12 != 5 && note % 12 != 0) {
+                currAlt = -1;
+            }
+            notes.add(new float[]{tick, duration, resolution / duration,
+                    note + MusicalConstants.getIndent(key), currAlt});
+        }
+        else {
+            deleteNote();
         }
     }
 
-    public void placePause(){
-        notes.add(new float[]{tick, duration, resolution / duration});
-    }
     private boolean isNote(){
         for (float[] temp : notes){
             if (temp[0] == tick) return true;
@@ -122,23 +184,43 @@ class Cursor {
         }
     }
 
-    private void deleteThisPauses(){
-        for (int i = 0; i < notes.size(); i ++){
-            if (notes.get(i)[0] == tick && notes.get(i).length == 3){
-                notes.remove(i);
-            }
-        }
-    }
-
     public ArrayList<float[]> getNotes() {
-        notes = Packer.sortByGroups(notes, groupResolution);
-        notes = Packer.setPauses(notes, resolution, maxTick * n, maxTick * (n + 1), groupResolution);
-        return notes;
+        Packer.sortByFirstElement(notes);
+        return Packer.setCompletedPauses(notes, resolution, maxTick * n, maxTick * (n + 1), groupResolution);
     }
 
     public float[] getCoords(){
         float x = tick * K;
         float y = Packer.getMove(note, key);
         return new float[]{x, y};
+    }
+
+    private boolean isContain(){
+        for (float[] temp : notes){
+            if (temp[0] == tick && temp[1] == duration && temp[3] == note + MusicalConstants.getIndent(key)){
+                return true;
+            }
+            if (temp[0] > tick) return false;
+        }
+        return false;
+    }
+
+    private void deleteNote(){
+        for (int i = 0; i < notes.size() - 1; i++){
+            if (notes.get(i)[0] == tick && notes.get(i)[1] == duration && notes.get(i)[3] == note + MusicalConstants.getIndent(key)){
+                notes.remove(i);
+                return;
+            }
+        }
+    }
+
+    private void deletePauses(){
+        int a = 0;
+        for (int i = 0; i < notes.size() - 1; i++){
+            if (notes.get(i).length < 5){
+                notes.remove(i - a);
+                a++;
+            }
+        }
     }
 }

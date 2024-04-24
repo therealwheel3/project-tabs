@@ -532,7 +532,7 @@ public class LinesWithoutCursor extends View {
             if (i % 12 == 4 || i % 12 == 11){
                 move += 1;
             }
-            else {move += 0.5;}
+            else move += 0.5;
         }
         return (int)(move - key * 1.5);
     }

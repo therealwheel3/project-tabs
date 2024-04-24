@@ -292,7 +292,7 @@ public class Packer {
         return result;
     }
 
-    public static byte getKey(float[][] bar){
+    public static byte getKey(ArrayList<float[]> bar){
         //a function that gives out a key suitable for a musical beat
         //функция выдающая ключ, подходящий к музыкальному такту
         byte maxx = 0;
@@ -441,6 +441,46 @@ public class Packer {
         return result;
     }
 
+    public static ArrayList<float[]> setCompletedPauses(ArrayList<float[]> bar, int resolution, int startTick, int endTick, int groupResolution){
+        //a function that sets all the pauses in the beat
+        //функция выставляющая все паузы в такте
+        ArrayList<float[]> result = new ArrayList<>();
+        float[] temp;
+        if (startTick != bar.get(0)[0]){
+            temp = new float[]{startTick,
+                    resolution / (bar.get(0)[0] - startTick),
+                    bar.get(0)[0] - startTick};
+            if (temp[1] % 1 != 0){
+                pauseSplitter(temp, resolution, result, endTick - startTick);
+            }
+            else result.add(temp);
+        }
+        for (int i = 0; i < bar.size() - 1; i++){
+            result.add(bar.get(i));
+            if (bar.get(i)[0] + bar.get(i)[2] < bar.get(i + 1)[0]){
+                temp = new float[]{bar.get(i)[0] + bar.get(i)[2],
+                        resolution / (bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]),
+                        bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]};
+                if (temp[1] % 1 != 0){
+                    pauseSplitter(temp, resolution, result, endTick - startTick);
+                }
+                else result.add(temp);
+            }
+        }
+        result.add(bar.get(bar.size() - 1));
+        if (endTick > bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2]){
+            temp = new float[]{bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2],
+                    resolution / (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]),
+                    endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]};
+            if (temp[1] % 1 != 0){
+                pauseSplitter(temp, resolution, result, endTick - startTick);
+            }
+            else result.add(temp);
+        }
+        result = sortByCompletedGroups(result, groupResolution);
+        return result;
+    }
+
     public static ArrayList<float[]> sortByGroups(ArrayList<float[]> bar, int groupResolution){
         float group = 1;
         sortByFirstElement(bar);
@@ -458,6 +498,28 @@ public class Packer {
             }
             if (temp.length == 5) result.add(new float[]{temp[0], temp[1], temp[2], temp[3], temp[4], group});
             else if (temp.length == 6) result.add(new float[]{temp[0], temp[1], temp[2], temp[3], temp[4], group, temp[5]});
+            else result.add(new float[]{temp[0], temp[1], temp[2], group});
+        }
+        return result;
+    }
+
+    public static ArrayList<float[]> sortByCompletedGroups(ArrayList<float[]> bar, int groupResolution){
+        float group = 1;
+        sortByFirstElement(bar);
+        int ticks = (int) bar.get(0)[2];
+        ArrayList<float[]> result = new ArrayList<>();
+        int prevTick = (int) bar.get(0)[0];
+        for (float[] temp : bar) {
+            if (ticks >= groupResolution && prevTick != temp[0]) {
+                group *= -1;
+                ticks = 0;
+            }
+            if (temp[0] != prevTick){
+                ticks += temp[2];
+                prevTick = (int) temp[0];
+            }
+            if (temp.length == 6 || temp.length == 5) result.add(new float[]{temp[0], temp[1], temp[2], temp[3], temp[4], group});
+            else if (temp.length == 7) result.add(new float[]{temp[0], temp[1], temp[2], temp[3], temp[4], group, temp[6]});
             else result.add(new float[]{temp[0], temp[1], temp[2], group});
         }
         return result;
