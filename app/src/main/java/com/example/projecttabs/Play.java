@@ -294,7 +294,7 @@ public class Play extends AppCompatActivity {
         Log.d("initial setup ", "initial");
         line = new LinesWithoutCursor(this);
         line.setData(map.get(0), key, nominator, denominator, MusicalConstants.getIndent(key), 0, resolution, 1);
-        if (map.size() > 2){line.setNextLigas(Packer.ligaSet(map.get(1)));}
+        if (map.size() >= 2){line.setNextLigas(Packer.ligaSet(map.get(1)));}
         line1.removeAllViews();
         line1.addView(line);
         line = new LinesWithoutCursor(this);
@@ -304,7 +304,7 @@ public class Play extends AppCompatActivity {
             line2.addView(line);
             line.setPrevLigas(Packer.ligaSet(map.get(0)));
             Log.d("asdasdasdsad", Packer.ligaSet(map.get(0)) + " " + Packer.ligaSet(map.get(2)));
-            if (map.size() > 3){line.setNextLigas(Packer.ligaSet(map.get(2)));}
+            if (map.size() >= 3){line.setNextLigas(Packer.ligaSet(map.get(2)));}
             tactCursorLayout.addView(new TactCursor(this));
             currentTact = true;
             n = 1;

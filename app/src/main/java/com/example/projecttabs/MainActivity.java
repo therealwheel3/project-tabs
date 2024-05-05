@@ -1,5 +1,7 @@
 package com.example.projecttabs;
 
+import static com.example.projecttabs.R.drawable.*;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,12 +37,15 @@ import java.util.Objects;
 public class MainActivity extends AppCompatActivity {
     public static final String APP_PREFERENCES = "mysettings";
     private File file = new File("/storage/emulated/0/download/Ball3.mid");
+    Cursor cursor;
+    LinesWithCursor lines;
     private int duration = 4;
     ArrayList<float[]> fmap;
     ArrayList<ArrayList<float[]>> map;
     MidiFile midiFile;
     float[] mainInfo;
     int n = 0;
+    ArrayList<ArrayList<float[]>> changedTrack = new ArrayList<>();
     private int trackNumber = 0;
     SharedPreferences mSettings;
     SharedPreferences.Editor editor;
@@ -67,25 +72,104 @@ public class MainActivity extends AppCompatActivity {
         line1 = findViewById(R.id.firstLine);
         TextView trackNumberField = findViewById(R.id.TrackNumber);
 
+        cursor = new Cursor(0);
+        cursor.setData(480 * 4, new int[7], 0, 480 * 4, 0, 480);
+        cursor.setTicksPerTact(480 * 4);
+
         mSettings = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
         editor = mSettings.edit();
 
         initialSetup();
 
         ImageButton arrowDown = (android.widget.ImageButton) findViewById(R.id.downArrow); // for cursor
+        arrowDown.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.downNote();
+                lines.invalidate();
+            }
+        });
 
         ImageButton arrowUp = (android.widget.ImageButton) findViewById(R.id.upArrow);
+        arrowUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.upNote();
+                lines.invalidate();
+            }
+        });
 
         ImageButton arrowRight = (android.widget.ImageButton) findViewById(R.id.rightArrow);
+        arrowRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.rightNote();
+                lines.invalidate();
+            }
+        });
 
         ImageButton arrowLeft = (android.widget.ImageButton) findViewById(R.id.leftArrow);
-
+        arrowLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.leftNote();
+                lines.invalidate();
+            }
+        });
         ImageButton doubleArrowRight = findViewById(R.id.rightDoubleArrow);
+        doubleArrowRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (changedTrack.size() <= n){
+                    changedTrack.add(cursor.getNotes());
+                }
+                else {
+                    changedTrack.set(n, cursor.getNotes());
+                }
+                cursor.nextTact();
+                n++;
+                if (changedTrack.size() > n){
+                    cursor.setNotes(changedTrack.get(n));
+                }
+                lines.setData(cursor.getNotesForView());
+                lines.setTactNumber(n + 1);
+                lines.invalidate();
+            }
+        });
         ImageButton doubleLeftArrow = findViewById(R.id.leftDoubleArrow);
+        doubleLeftArrow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (n > 0) {
+                    if (changedTrack.size() > n) {
+                        changedTrack.set(n, cursor.getNotes());
+                    }
+                    else changedTrack.add(cursor.getNotes());
+                    n--;
+                    cursor.prevTact(changedTrack.get(n));
+                    cursor.setNotes(changedTrack.get(n));
+                    lines.setData(cursor.getNotesForView());
+                    lines.setTactNumber(n + 1);
+                    lines.invalidate();
+                }
+            }
+        });
+
+        ImageButton placeNote = findViewById(R.id.placeNote);
+        placeNote.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.placeNote();
+                lines.setData(cursor.getNotesForView());
+                lines.invalidate();
+                for (float[] temp : cursor.getNotesForView()){
+                    Log.d("dldkkdkddjd", Arrays.toString(temp));
+                }
+            }
+        });
 
         Button plusDuration = findViewById(R.id.sizeRight);
         Button minusDuration = findViewById(R.id.sizeLeft);
-        TextView noteSize = findViewById(R.id.noteSize);
 
 
 
@@ -135,6 +219,112 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 10);
             }
         });
+
+        Button sizeMinus = findViewById(R.id.sizeLeft);
+        Button sizePlus = findViewById(R.id.sizeRight);
+        sizeMinus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (duration < 32) {
+                    duration *= 2;
+                    cursor.setDuration(duration);
+                    switch (duration){
+                        case 2:
+                            placeNote.setImageResource(R.drawable.n2);
+                            break;
+                        case 4:
+                            placeNote.setImageResource(R.drawable.n4);
+                            break;
+                        case 8:
+                            placeNote.setImageResource(R.drawable.n8);
+                            break;
+                        case 16:
+                            placeNote.setImageResource(R.drawable.n16);
+                            break;
+                        case 32:
+                            placeNote.setImageResource(R.drawable.n32);
+                            break;
+                    }
+                }
+            }
+        });
+
+        sizePlus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (duration > 1) {
+                    duration /= 2;
+                    cursor.setDuration(duration);
+                    switch (duration){
+                        case 1:
+                            placeNote.setImageResource(R.drawable.n0);
+                            break;
+                        case 2:
+                            placeNote.setImageResource(R.drawable.n2);
+                            break;
+                        case 4:
+                            placeNote.setImageResource(R.drawable.n4);
+                            break;
+                        case 8:
+                            placeNote.setImageResource(R.drawable.n8);
+                            break;
+                        case 16:
+                            placeNote.setImageResource(R.drawable.n16);
+                            break;
+                    }
+                }
+            }
+        });
+
+        Button diezButton = findViewById(R.id.diez);
+        Button bemolButton = findViewById(R.id.bemol);
+        Button bekarButton = findViewById(R.id.bekar);
+        diezButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.setAltSign(1);
+                lines.setData(cursor.getNotesForView());
+                lines.invalidate();
+            }
+        });
+
+        bekarButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.setAltSign(-1);
+                lines.setData(cursor.getNotesForView());
+                lines.invalidate();
+            }
+        });
+
+        bemolButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.setAltSign(-2);
+                lines.setData(cursor.getNotesForView());
+                lines.invalidate();
+            }
+        });
+
+        Button cancelLastActionButton = findViewById(R.id.returnLastAction);
+        cancelLastActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.cancelLastAction();
+                lines.setData(cursor.getNotesForView());
+                lines.invalidate();
+            }
+        });
+
+        Button clearTact = findViewById(R.id.clearTact);
+        clearTact.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cursor.clearTact();
+                lines.setData(cursor.getNotesForView());
+                lines.invalidate();
+            }
+        });
     }
 
     @Override
@@ -155,15 +345,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 10){
-            if (!data.getData().getPath().equals("")){
-                String path = data.getData().getPath().split(":")[1];
-                file = new File(path);
-                editor.putString("filePath", path);
-                editor.apply();
-            }
             try {
-                midiFile = new MidiFile(file);
-                initialSetup();
+                if (!(data instanceof Nullable)) {
+                    String path = data.getData().getPath().split(":")[1];
+                    file = new File(path);
+                    editor.putString("filePath", path);
+                    editor.apply();
+                    midiFile = new MidiFile(file);
+                }
+                    initialSetup();
             } catch (IOException e) {
                 Log.d("midifile", "open failed");
             }
@@ -171,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
             List<MidiTrack> tracks = midiFile.getTracks();
             ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(0).getEvents());
             ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
-            ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
+            map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
 
         }
     }
@@ -184,14 +374,15 @@ public class MainActivity extends AppCompatActivity {
             List<MidiTrack> tracks = midiFile.getTracks();
             ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(0).getEvents());
             ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
-            ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
+            map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
             if (map.size() > 0){
-                Log.d("ldlsdlsdlsdlsdlsldlsdsdsdlsldlsdlsdldslds", trackNumber + "");
-                LinesWithCursor tempLine = new LinesWithCursor(this);
-                tempLine.setData(map.get(0), 0, 4, 4,
+                lines = new LinesWithCursor(this);
+                lines.setCursor(cursor);
+                cursor.setNotes(map.get(0));
+                lines.setData(map.get(0), 0, 4, 4,
                         MusicalConstants.getIndent(0), 0, midiFile.getResolution() * 4, 1);
                 line1.removeAllViews();
-                line1.addView(tempLine);
+                line1.addView(lines);
 
                 for (MidiTrack temp : tracks){
                     float[] info = Packer.getMainInfo(new ArrayList<>(temp.getEvents()));
@@ -202,9 +393,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                Cursor cursor = new Cursor();
-                cursor.setData(resolution, new int[]{}, (int) (resolution * mainInfo[1] / (4 / mainInfo[2])),
-                        n, (int) (resolution * mainInfo[3] / (4 / mainInfo[5])));
+                Cursor cursor = new Cursor(0);
+                cursor.setData(840 * 4, new int[7], 0, 840 * 4, 0, 840);
             }
         } catch (IOException e) {
             Log.d("midifile", "open failed");
@@ -221,12 +411,13 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
             ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
             if (map.size() > 0){
-                Log.d("ldlsdlsdlsdlsdlsldlsdsdsdlsldlsdlsdldslds", trackNumber + "");
-                LinesWithCursor tempLine = new LinesWithCursor(this);
-                tempLine.setData(map.get(0), 0, 4, 4,
+                lines = new LinesWithCursor(this);
+                cursor.setNotes(map.get(0));
+                lines.setCursor(cursor);
+                lines.setData(map.get(0), 0, 4, 4,
                         MusicalConstants.getIndent(0), 0, midiFile.getResolution() * 4, 1);
                 line1.removeAllViews();
-                line1.addView(tempLine);
+                line1.addView(lines);
 
                 for (MidiTrack temp : tracks){
                     float[] info = Packer.getMainInfo(new ArrayList<>(temp.getEvents()));
@@ -237,9 +428,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                Cursor cursor = new Cursor();
-                cursor.setData(resolution, new int[]{}, (int) (resolution * mainInfo[1] / (4 / mainInfo[2])),
-                        n, (int) (resolution * mainInfo[3] / (4 / mainInfo[5])));
             }
         } catch (IOException e) {
             Log.d("midifile", "open failed");

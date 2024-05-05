@@ -44,11 +44,72 @@
         app:layout_constraintTop_toBottomOf="@+id/linearLayout10">
 
         <LinearLayout
+            android:id="@+id/tracksPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/prevTrack"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/white"
+                android:src="@drawable/leftarrow" />
+
+            <TextView
+                android:id="@+id/TrackNumber"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/white"
+                android:backgroundTint="@color/white"
+                android:ems="10"
+                android:gravity="center"
+                android:inputType="number"
+                android:text="1"
+                android:textAlignment="center"
+                android:textSize="24dp" />
+
+            <ImageButton
+                android:id="@+id/nextTrack"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/white"
+                android:src="@drawable/rightarrow" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/instrumentPanel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:orientation="vertical" />
+            android:layout_weight="3"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/returnLastAction"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="@color/main_theme"
+                android:text="return last action" />
+
+            <Button
+                android:id="@+id/clearTact"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="@color/main_theme"
+                android:text="clear tact" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="3" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -119,7 +180,7 @@
         android:layout_height="0dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/notes"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/linearLayout10"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -153,6 +214,14 @@
                 android:backgroundTint="@color/main_theme"
                 android:text="Track Info" />
 
+            <Button
+                android:id="@+id/andvancedFunc"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:backgroundTint="@color/main_theme"
+                android:text="andvanced functions" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -160,213 +229,76 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="2"
-            android:orientation="horizontal">
-
-        </LinearLayout>
+            android:orientation="horizontal"/>
 
         <LinearLayout
-            android:id="@+id/tracksPanel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="5"
+            android:gravity="bottom"
             android:orientation="horizontal">
 
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
-
-            <ImageButton
-                android:id="@+id/prevTrack"
+            <Button
+                android:id="@+id/diez"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@color/white"
-                android:src="@drawable/leftarrow" />
-
-            <TextView
-                android:id="@+id/TrackNumber"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@color/white"
                 android:backgroundTint="@color/white"
-                android:ems="10"
-                android:inputType="number"
-                android:text="1"
-                android:textSize="24dp"
-                android:textAlignment="center"
-                android:gravity="center"/>
+                android:gravity="center"
+                android:text="♯"
+                android:textColor="@color/black"
+                android:textSize="20dp" />
 
-            <ImageButton
-                android:id="@+id/nextTrack"
+            <Button
+                android:id="@+id/bekar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@color/white"
-                android:src="@drawable/rightarrow" />
+                android:backgroundTint="@color/white"
+                android:gravity="center"
+                android:text="♮"
+                android:textColor="@color/black"
+                android:textSize="20dp" />
 
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/notes"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="bottom"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <Button
-            android:id="@+id/splitButton"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:backgroundTint="@color/main_theme"
-            android:text="split" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:gravity="bottom"
-            android:orientation="horizontal">
-
-            <LinearLayout
+            <Button
+                android:id="@+id/bemol"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:gravity="bottom"
-                android:orientation="vertical">
-
-                <ImageButton
-                    android:id="@+id/upMultiol"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:backgroundTint="@color/white"
-                    android:src="@drawable/uparrow" />
-
-                <TextView
-                    android:id="@+id/multiol"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="3"
-                    android:textAlignment="center" />
-
-                <ImageButton
-                    android:id="@+id/downMultiol"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:backgroundTint="@color/white"
-                    android:src="@drawable/downarrow" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="bottom"
-                android:orientation="vertical">
-
-                <Button
-                    android:id="@+id/diez"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@color/black"
-                    android:text="♯"
-                    android:gravity="center"
-                    android:textSize="20dp" />
-
-                <Button
-                    android:id="@+id/bekar"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@color/black"
-                    android:text="♮"
-                    android:gravity="center"
-                    android:textSize="20dp"/>
-
-                <Button
-                    android:id="@+id/bemol"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:backgroundTint="@color/white"
-                    android:textColor="@color/black"
-                    android:text="♭"
-                    android:gravity="center"
-                    android:textSize="30dp"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:gravity="bottom"
-            android:orientation="horizontal">
+                android:backgroundTint="@color/white"
+                android:gravity="center"
+                android:text="♭"
+                android:textColor="@color/black"
+                android:textSize="30dp" />
 
             <Button
                 android:id="@+id/sizeLeft"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="2"
-                android:textSize="30dp"
+                android:layout_weight="1"
                 android:backgroundTint="@color/main_theme"
-                android:text="-" />
-
-            <TextView
-                android:id="@+id/noteSize"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="3"
-                android:gravity="center"
-                android:text="4" />
-
-            <Button
-                android:id="@+id/sizeRight"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="2"
-                android:textSize="30dp"
-                android:backgroundTint="@color/main_theme"
-                android:text="+" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/baseButtons"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:gravity="bottom"
-            android:orientation="horizontal">
+                android:text="-"
+                android:textSize="30dp" />
 
             <ImageButton
                 android:id="@+id/placeNote"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="2"
+                android:layout_weight="1"
                 android:backgroundTint="@color/white"
                 android:src="@drawable/n4" />
 
+            <Button
+                android:id="@+id/sizeRight"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="@color/main_theme"
+                android:text="+"
+                android:textSize="30dp" />
+
         </LinearLayout>
+
     </LinearLayout>
 
 

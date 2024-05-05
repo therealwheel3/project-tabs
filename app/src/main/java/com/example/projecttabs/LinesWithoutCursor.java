@@ -169,7 +169,6 @@ public class LinesWithoutCursor extends View {
         //whitePaint.setStyle(Paint.Style.FILL_AND_STROKE);
         //whitePaint.setColor(Color.WHITE);
         paint.setTextSize(75);
-        Log.d(x + "", n + "");
         paint.setStyle(Paint.Style.FILL_AND_STROKE);
         if (n < 4) {
             paint.setStrokeWidth(4);
@@ -329,6 +328,10 @@ public class LinesWithoutCursor extends View {
                 }
             }
             else {
+                if (!lines.isEmpty()){
+                    drawLines(lines, y * 2, x, paint, canvas);
+                    lines.clear();
+                }
                 drawPause(2 * x + (x1 * (note[0] - n)) + (x / 3), y, x / 3, (int) size, canvas, paint);
             }
         }
@@ -385,7 +388,7 @@ public class LinesWithoutCursor extends View {
 
             if (maxY > first && maxY > last) {
                 if (last == first){
-                    for (byte i = 0; i < lines.get(0)[5]; i++) {
+                    for (byte i = 0; i < lines.get(0)[5] - 1; i++) {
                         canvas.drawLine(x0, maxY - (y / 2 * i), x1, maxY - (y / 2 * i), paint);
                     }
                 }
@@ -461,7 +464,8 @@ public class LinesWithoutCursor extends View {
 
         if (indentT == 0){
             for (byte i = 0; i < lines.get(0)[5]; i++){
-                canvas.drawLine(x0, maxY, x0 + y, maxY + y, paint);
+                if (direction) canvas.drawLine(x0, maxY - i * y / 2, x0 + y, maxY + y - i * y / 2, paint);
+                else canvas.drawLine(x0, maxY + i * y / 2, x0 + y, maxY + y + i * y / 2, paint);
             }
         }
 
