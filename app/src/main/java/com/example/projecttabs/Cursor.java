@@ -8,6 +8,7 @@ import com.example.projecttabs.midi.util.Packer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Stack;
@@ -117,7 +118,7 @@ class Cursor {
     }
 
     public void cancelLastAction(){
-        if (!prevNotes.isEmpty()) notes = prevNotes.peek();
+        if (!prevNotes.isEmpty()) notes = prevNotes.pop();
     }
 
     public void upNote() {
@@ -177,19 +178,31 @@ class Cursor {
     public void rightNote(){
         // выбрать ноту правее если такая существует или переместиться враво на длительность
         // select a note to the right if there is one, or move to the right for the duration
-        if (tick + resolution / duration < maxTick && !isNoteInRange(tick, tick + resolution / duration)) tick += resolution / duration;
+        if (tick + resolution / duration < maxTick && !isNoteInRange(tick, tick + resolution / duration)) {
+            tick += resolution / duration;
+        }
         else getNextTick();
     }
 
     public void leftNote(){
         // выбрать ноту левее если такая существует или переместиться влево на длительность
         // select a note to the left if there is one, or move to the left for the duration
-        if (tick - resolution / duration >= minTick && !isNoteInRange(tick - resolution / duration, tick)) tick -= resolution / duration;
+        if (tick - resolution / duration >= minTick && !isNoteInRange(tick - resolution / duration, tick)) {
+            tick -= resolution / duration;
+        }
         else getPrevTick();
     }
 
     public void setDuration(int duration){
         this.duration = duration;
+        for (float[] temp : notes){
+            if (temp[0] == tick && ((int) temp[1] & (int) (temp[1] - 1)) == 0) {
+                float[] temp1 = new float[]{temp[0], duration, resolution / duration, temp[3], temp[4]};
+                notes.remove(temp);
+                notes.add(temp1);
+            }
+        }
+        Packer.sortByFirstElement(notes);
     }
 
     public void setConstAlts(int[] alts) {
@@ -226,7 +239,7 @@ class Cursor {
 
     private void deleteCurrentPauses(){
         for (int i = 0; i < notes.size() - 1; i++){
-            if (notes.get(i).length == 4){
+            if (notes.get(i).length < 5 && tick == notes.get(i)[0]){
                 notes.remove(i);
                 return;
             }
@@ -238,9 +251,12 @@ class Cursor {
         // get a list with all the notes
         Packer.sortByFirstElement(notes);
         setAlts(true);
+        notes = Packer.deleteUselessNotes(notes);
         if (!notes.isEmpty()) return Packer.setCompletedPauses(notes, resolution, minTick, maxTick, groupResolution);
-        ArrayList<float[]> result = Packer.setCompletedPauses(new ArrayList<>(Arrays.asList(new float[]{0, 0, 0, 0, 0})), resolution, minTick, maxTick, groupResolution);
-        result.remove(0);
+        ArrayList<float[]> a = new ArrayList<>();
+        a.add(new float[]{maxTick, 0, 0});
+        ArrayList<float[]> result = Packer.setCompletedPauses(a, resolution, minTick, maxTick, groupResolution);
+        result = Packer.deleteUselessNotes(result);
         return result;
     }
 
@@ -249,9 +265,12 @@ class Cursor {
         // get a list with all the notes
         Packer.sortByFirstElement(notes);
         setAlts(true);
-        if (!notes.isEmpty()) return Packer.tactForView(Packer.setCompletedPauses(notes, resolution, minTick, maxTick, groupResolution), minTick);
-        ArrayList<float[]> result = Packer.setCompletedPauses(new ArrayList<>(Arrays.asList(new float[]{0, 0, 0, 0, 0})), resolution, minTick, maxTick, groupResolution);
-        result.remove(0);
+        notes = Packer.deleteUselessNotes(notes);
+        if (!notes.isEmpty() && !Packer.isOnlyPauses(notes)) return Packer.tactForView(Packer.setCompletedPauses(notes, resolution, minTick, maxTick, groupResolution), ticksPerTact);
+        ArrayList<float[]> a = new ArrayList<>();
+        a.add(new float[]{0, 0, 0});
+        ArrayList<float[]> result = Packer.tactForView(Packer.setCompletedPauses(a, resolution, 0, ticksPerTact, groupResolution), ticksPerTact);
+        result = Packer.deleteUselessNotes(result);
         return result;
     }
 
@@ -403,10 +422,6 @@ class Cursor {
         return false;
     }
 
-    private void setPause(float tick, float duration, float durationTick, float group){
-        notes.add(new float[]{tick, duration, durationTick, group});
-    }
-
     private void deleteNote(){
         // удалить текущую ноту
         // delete the current note
@@ -418,7 +433,6 @@ class Cursor {
                     float tempDurationTick = notes.get(i)[2];
                     float tempGroup = notes.get(i)[3];
                     notes.remove(i);
-                    if (!isNoteOnTick()){setPause(tempTick, tempDuration, tempDurationTick, tempGroup);}
                     return;
                 }
                 if (AlteredNotes.contains((int) notes.get(i)[3] % 12) &&
@@ -428,7 +442,6 @@ class Cursor {
                     float tempDurationTick = notes.get(i)[2];
                     float tempGroup = notes.get(i)[3];
                     notes.remove(i);
-                    if (!isNoteOnTick()){setPause(tempTick, tempDuration, tempDurationTick, tempGroup);}
                     return;
                 }
             }
@@ -577,5 +590,13 @@ class Cursor {
     public void clearTact(){
         prevNotes.push(notes);
         notes = new ArrayList<>();
+    }
+
+    public void reload(){
+        minTick = 0;
+        maxTick = ticksPerTact;
+        n = 0;
+        tick = 0;
+        notes.clear();
     }
 }

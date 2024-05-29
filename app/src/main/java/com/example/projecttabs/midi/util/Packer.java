@@ -2,6 +2,7 @@ package com.example.projecttabs.midi.util;
 
 import android.util.Log;
 
+import com.example.projecttabs.midi.MidiFile;
 import com.example.projecttabs.midi.MidiTrack;
 import com.example.projecttabs.midi.event.Controller;
 import com.example.projecttabs.midi.event.MidiEvent;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.TreeSet;
 import java.util.stream.IntStream;
 
 public class Packer {
@@ -245,13 +248,20 @@ public class Packer {
     }
 
     public static float[] getMainInfo(ArrayList<MidiEvent> events){
-        // 0 - bpm, 1 - nom, 2 - den, 3 - program , 4 - group nom, 5 - group den
+        // 0 - bpm, 1 - nom, 2 - den, 3 - program , 4 - group nom, 5 - group den, 6 - channel
         //a function that provides basic information about the track
         //функция выдающая основную информацию о треке
-        float[] result = new float[]{120, 4, 4, 0, 1, 4};
+        float[] result = new float[]{120, 4, 4, 0, 1, 4, 0};
+        boolean isTempo = true;
         for (MidiEvent event : events){
+            if (event instanceof NoteOn){
+                result[6] = event.getChannel();
+            }
             if (event instanceof Tempo){
-                result[0] = Math.round(((Tempo) event).getBpm());
+                if(isTempo) {
+                    result[0] = Math.round(((Tempo) event).getBpm());
+                    isTempo = true;
+                }
             }
             if (event instanceof TimeSignature){
                 result[1] = ((TimeSignature) event).getNumerator();
@@ -283,14 +293,6 @@ public class Packer {
         ArrayList<float[]> temp = new ArrayList<>();
         for (float[] note : notes) {
             if (note[0] >= k * maxTicks) {
-                //while (!checkDuration(temp, 1)){
-                //    float[] temp1 = temp.get(temp.size() - 1);
-                //    temp.remove(temp.size() - 1);
-                //    temp1[1] *= 2;
-                //    temp1[2] /= 2;
-                //    temp.add(temp1);
-                //    System.out.println(Arrays.toString(temp1));
-                //}
                 if (!temp.isEmpty()) result.add(setPauses(temp, resolution, (k - 1) * resolution, k * resolution, groupResolution));
                 else result.add((ArrayList<float[]>) temp.clone());
                 temp.clear();
@@ -326,84 +328,282 @@ public class Packer {
         return duration == checker;
     }
 
-    public static ArrayList<float[]> setPauses(ArrayList<float[]> bar, int resolution, int startTick, int endTick, int groupResolution){
+    public static ArrayList<float[]> setCompletedPauses(ArrayList<float[]> bar, int resolution, int startTick, int endTick, int groupResolution){
         //a function that sets all the pauses in the beat
         //функция выставляющая все паузы в такте
         ArrayList<float[]> result = new ArrayList<>();
+        int primeFactorNumber = primeFactor(resolution);
         float[] temp;
         if (startTick != bar.get(0)[0]){
-            temp = new float[]{startTick,
-                    resolution / (bar.get(0)[0] - startTick),
-                    bar.get(0)[0] - startTick};
-            if (temp[1] % 1 != 0){
+            if (isBinDen((int) (bar.get(0)[0] - startTick), primeFactorNumber)){
+                temp = new float[]{startTick,
+                        resolution / (bar.get(0)[0] - startTick),
+                        bar.get(0)[0] - startTick};
                 pauseSplitter(temp, resolution, result, endTick - startTick);
             }
-            else result.add(temp);
+            else {
+                int tick = (int) (bar.get(0)[0] - startTick);
+                int tempStartTick = tick;
+                while (tick > 0){
+                    if (Packer.isBinDen(tick, primeFactorNumber)){
+                        if (Packer.isBinDen((tempStartTick - tick), (int) (resolution / bar.get(0)[1]))){
+                            break;
+                        }
+                    }
+                    tick--;
+                }
+                if (tick > 0) {
+                    float[] temp1 = new float[]{startTick, (float) resolution / tick,
+                            tick};
+                    pauseSplitter(temp1, resolution, result, endTick - startTick);
+                }
+                while (tick < tempStartTick){
+                    result.add(new float[]{tick, bar.get(0)[1], resolution / bar.get(0)[1]});
+                    tick += resolution / bar.get(0)[1];
+                }
+            }
         }
         for (int i = 0; i < bar.size() - 1; i++){
             result.add(bar.get(i));
-            if (bar.get(i)[0] + bar.get(i)[2] < bar.get(i + 1)[0]){
-                temp = new float[]{bar.get(i)[0] + bar.get(i)[2],
-                        resolution / (bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]),
-                        bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]};
-                if (temp[1] % 1 != 0){
+            if (isBinDen((int) (bar.get(i)[0] + bar.get(i)[2]), primeFactorNumber) && isBinDen((int) (bar.get(i + 1)[0]), primeFactorNumber)) {
+                if (bar.get(i)[0] + bar.get(i)[2] < bar.get(i + 1)[0]) {
+                    temp = new float[]{bar.get(i)[0] + bar.get(i)[2],
+                            resolution / (bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]),
+                            bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]};
                     pauseSplitter(temp, resolution, result, endTick - startTick);
                 }
-                else result.add(temp);
+            }
+            else if (isBinDen((int) (bar.get(i)[0] + bar.get(i)[2]), primeFactorNumber) && !isBinDen((int) (bar.get(i + 1)[0]), primeFactorNumber)){
+                int tempStartTick = (int) (bar.get(i)[0] + bar.get(i)[2]);
+                int tempEndTick = (int) bar.get(i + 1)[0];
+                int tickDiff = 1;
+                while (tickDiff < tempEndTick){
+                    if (Packer.isBinDen((tempEndTick - tickDiff), primeFactorNumber)){
+                        if (Packer.isBinDen(tickDiff, (int) (resolution / bar.get(i + 1)[1]))){
+                            break;
+                        }
+                    }
+                    tickDiff++;
+                }
+                if (tempEndTick - tempStartTick > tickDiff){
+                    temp = new float[]{tempStartTick, (float) resolution / (tempEndTick - tempStartTick - tickDiff), tempEndTick - tempStartTick - tickDiff};
+                    pauseSplitter(temp, resolution, result, endTick);
+                }
+                for (int j = 0; j < tickDiff / (resolution / bar.get(i + 1)[1]); j++){
+                    result.add(new float[]{tempStartTick + resolution / bar.get(i + 1)[1] * j, bar.get(i + 1)[1], resolution / bar.get(i + 1)[1]});
+                }
+            }
+            else if (!isBinDen((int) (bar.get(i)[0] + bar.get(i)[2]), primeFactorNumber) && isBinDen((int) (bar.get(i + 1)[0]), primeFactorNumber)){
+                int tempStartTick = (int) (bar.get(i)[0] + bar.get(i)[2]);
+                int tempEndTick = (int) bar.get(i + 1)[0];
+                int tickDiff = 1;
+                while (tickDiff < tempEndTick - tempStartTick){
+                    if (Packer.isBinDen((tempEndTick - tickDiff), primeFactorNumber)){
+                        if (Packer.isBinDen(tickDiff, (int) (resolution / bar.get(i)[1]))){
+                            break;
+                        }
+                    }
+                    tickDiff++;
+                }
+                for (int j = 0; j < tickDiff / (resolution / bar.get(i)[1]); j++){
+                    result.add(new float[]{tempStartTick + resolution / bar.get(i)[1] * j, bar.get(i)[1], resolution / bar.get(i)[1]});
+                }
+                if (tempEndTick - tempStartTick > tickDiff){
+                    temp = new float[]{tempStartTick, (float) resolution / (tempEndTick - tempStartTick - tickDiff), tempEndTick - tempStartTick - tickDiff};
+                    pauseSplitter(temp, resolution, result, endTick);
+                }
+            }
+            else {
+                if (bar.get(i)[1] == bar.get(i + 1)[1]){
+                    int tempStartTick = (int) (bar.get(i)[0] + bar.get(i)[2]);
+                    int tempEndTick = (int) bar.get(i + 1)[0];
+                    int tickDiff = tempEndTick - tempStartTick;
+                    for (int j = 0; j < tickDiff / (resolution / bar.get(i)[1]); j++){
+                        result.add(new float[]{tempStartTick + resolution / bar.get(i)[1] * j, bar.get(i)[1], resolution / bar.get(i)[1]});
+                    }
+                }
+                else {
+                    int resolution1 = (int) (resolution / bar.get(i)[1]);
+                    int resolution2 = (int) (resolution / bar.get(i + 1)[1]);
+                }
             }
         }
         result.add(bar.get(bar.size() - 1));
         if (endTick > bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2]){
-            temp = new float[]{bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2],
-                    resolution / (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]),
-                    endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]};
-            if (temp[1] % 1 != 0){
+            if (isBinDen((int) (bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2]), primeFactorNumber)) {
+                temp = new float[]{bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2],
+                        resolution / (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]),
+                        endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]};
+                if (temp[1] % 1 != 0) {
+                    pauseSplitter(temp, resolution, result, endTick - startTick);
+                } else result.add(temp);
+            }
+            else {
+                int tick = (int) (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]);
+                int tempEndTick = endTick - tick;
+                while (tick > 0){
+                    if (Packer.isBinDen((tempEndTick - tick), (int) (resolution / bar.get(bar.size() - 1)[1]))){
+                        break;
+                    }
+                    tick--;
+                }
+                while (tempEndTick < endTick){
+                    result.add(new float[]{tempEndTick, bar.get(bar.size() - 1)[1], resolution / bar.get(bar.size() - 1)[1]});
+                    tempEndTick += resolution / bar.get(bar.size() - 1)[1];
+                    tick -= resolution / bar.get(bar.size() - 1)[1];
+                    if (isBinDen(tempEndTick, primeFactorNumber)) break;
+                }
+                if (endTick - tempEndTick > 0) {
+                    pauseSplitter(new float[]{tempEndTick, (float) resolution / (endTick - tempEndTick), endTick - tempEndTick},
+                            resolution, result, endTick);
+                }
+            }
+        }
+        result = sortByCompletedGroups(result, groupResolution);
+        return result;
+    }
+
+    public static ArrayList<float[]> setPauses(ArrayList<float[]> bar, int resolution, int startTick, int endTick, int groupResolution){
+        //a function that sets all the pauses in the beat
+        //функция выставляющая все паузы в такте
+        ArrayList<float[]> result = new ArrayList<>();
+        int primeFactorNumber = primeFactor(resolution);
+        float[] temp;
+        if (startTick != bar.get(0)[0]){
+            if (isBinDen((int) (bar.get(0)[0] - startTick), primeFactorNumber)){
+                temp = new float[]{startTick,
+                        resolution / (bar.get(0)[0] - startTick),
+                        bar.get(0)[0] - startTick};
                 pauseSplitter(temp, resolution, result, endTick - startTick);
             }
-            else result.add(temp);
+            else {
+                int tick = (int) (bar.get(0)[0] - startTick);
+                int tempStartTick = tick;
+                while (tick > 0){
+                    if (Packer.isBinDen(tick, primeFactorNumber)){
+                        if (Packer.isBinDen((tempStartTick - tick), (int) (resolution / bar.get(0)[1]))){
+                            break;
+                        }
+                    }
+                    tick--;
+                }
+                if (tick > 0) {
+                    float[] temp1 = new float[]{startTick, (float) resolution / tick,
+                            tick};
+                    pauseSplitter(temp1, resolution, result, endTick - startTick);
+                }
+                while (tick < tempStartTick){
+                    result.add(new float[]{tick, bar.get(0)[1], resolution / bar.get(0)[1]});
+                    tick += resolution / bar.get(0)[1];
+                }
+            }
+        }
+        for (int i = 0; i < bar.size() - 1; i++){
+            result.add(bar.get(i));
+            if (isBinDen((int) (bar.get(i)[0] + bar.get(i)[2]), primeFactorNumber) && isBinDen((int) (bar.get(i + 1)[0]), primeFactorNumber)) {
+                if (bar.get(i)[0] + bar.get(i)[2] < bar.get(i + 1)[0]) {
+                    temp = new float[]{bar.get(i)[0] + bar.get(i)[2],
+                            resolution / (bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]),
+                            bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]};
+                    pauseSplitter(temp, resolution, result, endTick - startTick);
+                }
+            }
+            else if (isBinDen((int) (bar.get(i)[0] + bar.get(i)[2]), primeFactorNumber) && !isBinDen((int) (bar.get(i + 1)[0]), primeFactorNumber)){
+                int tempStartTick = (int) (bar.get(i)[0] + bar.get(i)[2]);
+                int tempEndTick = (int) bar.get(i + 1)[0];
+                int tickDiff = 1;
+                while (tickDiff < tempEndTick){
+                    if (Packer.isBinDen((tempEndTick - tickDiff), primeFactorNumber)){
+                        if (Packer.isBinDen(tickDiff, (int) (resolution / bar.get(i + 1)[1]))){
+                            break;
+                        }
+                    }
+                    tickDiff++;
+                }
+                if (tempEndTick - tempStartTick > tickDiff){
+                    temp = new float[]{tempStartTick, (float) resolution / (tempEndTick - tempStartTick - tickDiff), tempEndTick - tempStartTick - tickDiff};
+                    pauseSplitter(temp, resolution, result, endTick);
+                }
+                for (int j = 0; j < tickDiff / (resolution / bar.get(i + 1)[1]); j++){
+                    result.add(new float[]{tempStartTick + resolution / bar.get(i + 1)[1] * j, bar.get(i + 1)[1], resolution / bar.get(i + 1)[1]});
+                }
+            }
+            else if (!isBinDen((int) (bar.get(i)[0] + bar.get(i)[2]), primeFactorNumber) && isBinDen((int) (bar.get(i + 1)[0]), primeFactorNumber)){
+                int tempStartTick = (int) (bar.get(i)[0] + bar.get(i)[2]);
+                int tempEndTick = (int) bar.get(i + 1)[0];
+                int tickDiff = 1;
+                while (tickDiff < tempEndTick - tempStartTick){
+                    if (Packer.isBinDen((tempEndTick - tickDiff), primeFactorNumber)){
+                        if (Packer.isBinDen(tickDiff, (int) (resolution / bar.get(i)[1]))){
+                            break;
+                        }
+                    }
+                    tickDiff++;
+                }
+                for (int j = 0; j < tickDiff / (resolution / bar.get(i)[1]); j++){
+                    result.add(new float[]{tempStartTick + resolution / bar.get(i)[1] * j, bar.get(i)[1], resolution / bar.get(i)[1]});
+                }
+                if (tempEndTick - tempStartTick > tickDiff){
+                    temp = new float[]{tempStartTick, (float) resolution / (tempEndTick - tempStartTick - tickDiff), tempEndTick - tempStartTick - tickDiff};
+                    pauseSplitter(temp, resolution, result, endTick);
+                }
+            }
+            else {
+                if (bar.get(i)[1] == bar.get(i + 1)[1]){
+                    int tempStartTick = (int) (bar.get(i)[0] + bar.get(i)[2]);
+                    int tempEndTick = (int) bar.get(i + 1)[0];
+                    int tickDiff = tempEndTick - tempStartTick;
+                    for (int j = 0; j < tickDiff / (resolution / bar.get(i)[1]); j++){
+                        result.add(new float[]{tempStartTick + resolution / bar.get(i)[1] * j, bar.get(i)[1], resolution / bar.get(i)[1]});
+                    }
+                }
+                else {
+                    int resolution1 = (int) (resolution / bar.get(i)[1]);
+                    int resolution2 = (int) (resolution / bar.get(i + 1)[1]);
+                }
+            }
+        }
+        result.add(bar.get(bar.size() - 1));
+        if (endTick > bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2]){
+            if (isBinDen((int) (bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2]), primeFactorNumber)) {
+                temp = new float[]{bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2],
+                        resolution / (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]),
+                        endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]};
+                if (temp[1] % 1 != 0) {
+                    pauseSplitter(temp, resolution, result, endTick - startTick);
+                } else result.add(temp);
+            }
+            else {
+                int tick = (int) (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]);
+                int tempEndTick = endTick - tick;
+                while (tick > 0){
+                    if (Packer.isBinDen((tempEndTick - tick), (int) (resolution / bar.get(bar.size() - 1)[1]))){
+                        break;
+                    }
+                    tick--;
+                }
+                while (tempEndTick < endTick){
+                    result.add(new float[]{tempEndTick, bar.get(bar.size() - 1)[1], resolution / bar.get(bar.size() - 1)[1]});
+                    tempEndTick += resolution / bar.get(bar.size() - 1)[1];
+                    tick -= resolution / bar.get(bar.size() - 1)[1];
+                    if (isBinDen(tempEndTick, primeFactorNumber)) break;
+                }
+                if (endTick - tempEndTick > 0) {
+                    pauseSplitter(new float[]{tempEndTick, (float) resolution / (endTick - tempEndTick), endTick - tempEndTick},
+                            resolution, result, endTick);
+                }
+            }
         }
         result = sortByGroups(result, groupResolution);
         return result;
     }
 
-    public static ArrayList<float[]> setCompletedPauses(ArrayList<float[]> bar, int resolution, int startTick, int endTick, int groupResolution){
-        //a function that sets all the pauses in the beat
-        //функция выставляющая все паузы в такте
-        ArrayList<float[]> result = new ArrayList<>();
-        float[] temp;
-        if (startTick != bar.get(0)[0]){
-            temp = new float[]{startTick,
-                    resolution / (bar.get(0)[0] - startTick),
-                    bar.get(0)[0] - startTick};
-            if (temp[1] % 1 != 0){
-                pauseSplitter(temp, resolution, result, endTick - startTick);
-            }
-            else result.add(temp);
+    public static boolean isBinDen(int ticks, int primeDen){
+        while (ticks > 0){
+            ticks -= primeDen;
+            if (ticks < 0) return false;
         }
-        for (int i = 0; i < bar.size() - 1; i++){
-            result.add(bar.get(i));
-            if (bar.get(i)[0] + bar.get(i)[2] < bar.get(i + 1)[0]){
-                temp = new float[]{bar.get(i)[0] + bar.get(i)[2],
-                        resolution / (bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]),
-                        bar.get(i + 1)[0] - bar.get(i)[0] - bar.get(i)[2]};
-                if (temp[1] % 1 != 0){
-                    pauseSplitter(temp, resolution, result, endTick - startTick);
-                }
-                else result.add(temp);
-            }
-        }
-        result.add(bar.get(bar.size() - 1));
-        if (endTick > bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2]){
-            temp = new float[]{bar.get(bar.size() - 1)[0] + bar.get(bar.size() - 1)[2],
-                    resolution / (endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]),
-                    endTick - bar.get(bar.size() - 1)[0] - bar.get(bar.size() - 1)[2]};
-            if (temp[1] % 1 != 0){
-                pauseSplitter(temp, resolution, result, endTick - startTick);
-            }
-            else result.add(temp);
-        }
-        result = sortByCompletedGroups(result, groupResolution);
-        return result;
+        return true;
     }
 
 
@@ -452,7 +652,7 @@ public class Packer {
     }
 
     public static void noteSplitter(float[] note, int resolution, ArrayList<float[]> bars, int maxTicks){
-        float n = 0;
+        float n;
         if (note[1] < 1) {n = 1 / note[1];}
         else {n = note[1];}
         n = 1 / note[1];
@@ -491,7 +691,7 @@ public class Packer {
     }
 
     public static void completedNoteSplitter(float[] note, int resolution, ArrayList<float[]> bars, int maxTicks){
-        float n = 0;
+        float n;
         if (note[1] < 1) {n = 1 / note[1];}
         else {n = note[1];}
         n = 1 / note[1];
@@ -555,7 +755,6 @@ public class Packer {
             else bars.addAll(result);
         }
     }
-
     public static ArrayList<float[]> pauseSplitter(int divFactor, int resolution, float ticks, float startTick){
         ArrayList<float[]> result = new ArrayList<>();
         float[] temp = new float[4];
@@ -570,6 +769,13 @@ public class Packer {
             temp = new float[4];
         }
         return result;
+    }
+
+    public static int primeFactor(int denominator){
+        while (denominator % 2 == 0 && denominator > 2){
+            denominator /= 2;
+        }
+        return denominator;
     }
 
     public static void sortByFirstElement(ArrayList<float[]> arrays) {Collections.sort(arrays, (a, b) -> (int) (a[0] - b[0]));}
@@ -683,25 +889,52 @@ public class Packer {
         return result;
     }
 
-    public static MidiTrack packToTrack(ArrayList<ArrayList<float[]>> notes) {
+    public static MidiTrack packToTrack(ArrayList<ArrayList<float[]>> notes, int channel) {
         MidiTrack midiTrack = new MidiTrack();
         HashSet<Integer> usedLigas = new HashSet<>();
         for (ArrayList<float[]> temp1 : notes){
             for (float[] temp2 : temp1){
-                if (temp2.length == 4){
-                    midiTrack.insertEvent(new NoteOn((long) temp2[0], 0, 0, 1));
-                    midiTrack.insertEvent(new NoteOn((long) (temp2[0] + temp2[2]), 0, 0, 0));
+                if (temp2.length == 6) {
+                    midiTrack.insertNote(channel, (int) temp2[3], 80, (long) temp2[0], (long) temp2[2]);
+                    Log.d("dddddd", Arrays.toString(temp2));
                 }
-                else if (temp2.length == 6) midiTrack.insertNote(0, (int) temp2[3], 80, (long) temp2[0], (long) temp2[2]);
-                else {
+                else if (temp2.length > 6){
                     if (!usedLigas.contains((int) (temp2[6]))){
-                        midiTrack.insertNote(0, (int) temp2[3], 80, (long) temp2[0], ligaNoteLen(notes, (int) temp2[6]));
+                        midiTrack.insertNote(channel, (int) temp2[3], 80, (long) temp2[0], ligaNoteLen(notes, (int) temp2[6]));
                     }
                     usedLigas.add((int) temp2[6]);
+                    Log.d("eeeeeeee", Arrays.toString(temp2));
                 }
             }
         }
         return midiTrack;
+    }
+
+    public static MidiFile packAllTracks(ArrayList<ArrayList<ArrayList<float[]>>> changedTracks, List<MidiTrack> tracks){
+        MidiFile file = new MidiFile();
+        for (int i = 0; i < changedTracks.size(); i++){
+            int channel = 0;
+            if (i < tracks.size()) channel = getChannel(tracks.get(i).getEvents());
+            MidiTrack track = packToTrack(changedTracks.get(i), channel);
+            if (i < tracks.size()){
+                for (MidiEvent event : tracks.get(i).getEvents()){
+                    if (!(event instanceof NoteOn) && !(event instanceof NoteOff)){
+                        if (event.getChannel() == channel || event instanceof Tempo) {
+                            track.insertEvent(event);
+                        }
+                    }
+                }
+            }
+            file.addTrack(track);
+        }
+        return file;
+    }
+
+    public static int getChannel(TreeSet<MidiEvent> events){
+        for (MidiEvent event : events){
+            if (event instanceof NoteOn || event instanceof NoteOff) return event.getChannel();
+        }
+        return 0;
     }
 
     public static HashSet<Integer> ligaSet(ArrayList<float[]> bar){
@@ -715,33 +948,22 @@ public class Packer {
     }
     private static int ligaNoteLen(ArrayList<ArrayList<float[]>> notes, int liga){
         int result = 0;
+        boolean isLiga = true;
+        boolean isStarted = false;
         for (ArrayList<float[]> temp1 : notes){
-            boolean isLiga = false;
             for (float[] temp2 : temp1){
+                isLiga = false;
                 if (temp2.length == 7) {
                     if (temp2[6] == liga) {
                         isLiga = true;
+                        isStarted = true;
                         result += (int) temp2[2];
                     }
                 }
             }
-            if (!isLiga) return result;
-        }
-        return result;
-    }
-
-    public static ArrayList<float[]> splitter(float[] note, int resolution){
-        int ticks = (int) note[2];
-        int currentTick = (int) note[0];
-        ArrayList<float[]> result = new ArrayList<>();
-        for (int i = 1; i < 10; i++){
-            for (int j = 1; j < 13; j++){
-                int diff = (resolution / (i * j));
-                if (ticks - diff >= 0){
-                    result.add(new float[]{currentTick, i * j, diff, 1});
-                    ticks -= diff;
-                    currentTick += diff;
-                }
+            if (!isLiga && isStarted) {
+                if (result == 0) return 1920;
+                return result;
             }
         }
         return result;
@@ -798,11 +1020,28 @@ public class Packer {
         return newTrack;
     }
 
-    public static ArrayList<float[]> tactForView(ArrayList<float[]> tact, int minTick){
+    public static ArrayList<float[]> tactForView(ArrayList<float[]> tact, int resolution){
         ArrayList<float[]> result = new ArrayList<>();
         for (int i = 0; i < tact.size(); i++){
             result.add(tact.get(i));
-            if (minTick != 0) result.get(i)[0] %= minTick;
+            if (resolution != 0) result.get(i)[0] %= resolution;
+        }
+        return result;
+    }
+
+    public static boolean isOnlyPauses(ArrayList<float[]> tact){
+        for (float[] temp : tact){
+            if (temp.length > 4) return false;
+        }
+        return true;
+    }
+
+    public static ArrayList<float[]> deleteUselessNotes(ArrayList<float[]> tact){
+        ArrayList<float[]> result = new ArrayList<>();
+        for (float[] temp : tact){
+            if (temp[1] > 0){
+                result.add(temp);
+            }
         }
         return result;
     }

@@ -34,7 +34,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Play extends AppCompatActivity {
-    private File file = new File("/storage/emulated/0/download/Ball3.mid");
+    private File file = new File("/storage/emulated/0/download/Ball5.mid");
     MidiFile midiFile;
     boolean currentTact = true;
     int tactsCount;
@@ -93,13 +93,7 @@ public class Play extends AppCompatActivity {
             Log.d("midifile", "open failed");
         }
 
-        int resolution = midiFile.getResolution();
         List<MidiTrack> tracks = midiFile.getTracks();
-        ArrayList<MidiEvent> events = new ArrayList<MidiEvent>(tracks.get(trackNumber).getEvents());
-        ArrayList<float[]> tempMap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
-        map = Packer.finalMap(tempMap, resolution * 4, resolution, resolution * 4);
-
-        tactsCount = map.size();
         for (MidiTrack temp : tracks){
             float[] info = Packer.getMainInfo(new ArrayList<>(temp.getEvents()));
             Log.d("main info ", Arrays.toString(info));
@@ -109,11 +103,17 @@ public class Play extends AppCompatActivity {
             }
         }
 
-        int tactTime = (int) ((60000 / mainInfo[0]) * mainInfo[1]); // !!!!!
+        int resolution = midiFile.getResolution();
+        ArrayList<MidiEvent> events = new ArrayList<MidiEvent>(tracks.get(trackNumber).getEvents());
+        ArrayList<float[]> tempMap = Packer.generateNotesMap(events, resolution * 4,
+                (int) (resolution * mainInfo[1] * 4 / mainInfo[2]));
+        map = Packer.finalMap(tempMap, resolution * 4, resolution, (int) (resolution * mainInfo[1] * 4 / mainInfo[2]));
+        tactsCount = map.size();
+
+        int tactTime = (int) ((60000 / mainInfo[0]) * mainInfo[1]);
         initialSetup(resolution * 4);
         tactCursor.setData((int) mainInfo[0], tactTime);
 
-        Log.d("saasdasadaadwadawdaw", tactTime + " " + mainInfo[0]);
 
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override

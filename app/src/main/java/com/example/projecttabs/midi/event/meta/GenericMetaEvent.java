@@ -8,7 +8,7 @@ import java.io.OutputStream;
 
 public class GenericMetaEvent extends MetaEvent
 {
-    private byte[] mData;
+    private final byte[] mData;
 
     protected GenericMetaEvent(long tick, long delta, MetaEventData info)
     {

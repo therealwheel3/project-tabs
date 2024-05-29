@@ -62,11 +62,7 @@ public abstract class MidiEvent implements Comparable<MidiEvent>
         {
             return true;
         }
-        if(this.getClass().equals(prevEvent.getClass()))
-        {
-            return false;
-        }
-        return true;
+        return !this.getClass().equals(prevEvent.getClass());
     }
 
     public void writeToFile(OutputStream out, boolean writeType) throws IOException

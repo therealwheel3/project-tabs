@@ -206,6 +206,7 @@ public class LinesWithCursor extends View {
             if (note.length >= 6){
                 if (note.length == 7){ligas.add(note);}
                 move = getMove(note[3]);
+                Log.d("dldlkdlddld", Arrays.toString(note));
                 if (note[1] >= 8 && note[5] == group){
                     drawNote(false, 2 * x + (x1 * (note[0] - n)) + (x / 3), y * (27 - move) - (note[4] == -2 ? y : 0),
                             x / 6, y / 2, size, canvas, paint, (int) note[4], false);
@@ -227,14 +228,16 @@ public class LinesWithCursor extends View {
                     }
                 }
                 else if(note[1] < 8){
-                    if (y * (27 - move) - (note[4] == -2 ? y : 0) > y * 14) {
-                        drawNote(true, 2 * x + (x1 * (note[0] - n)) + (x / 3), y * (27 - move) - (note[4] == -2 ? y : 0),
-                                x / 6, y / 2, size, canvas, paint, (int) note[4], false);
+                    drawNote(true, 2 * x + (x1 * (note[0] - n)) + (x / 3), y * (27 - move) - (note[4] == -2 ? y : 0),
+                            x / 6, y / 2, size, canvas, paint, (int) note[4], !(y * (27 - move) - (note[4] == -2 ? y : 0) > y * 14));
+                    if (!lines.isEmpty()){
+                        drawLines(lines, y * 2, x, paint, canvas);
+                        lines.clear();
                     }
-                    else {
-                        drawNote(true, 2 * x + (x1 * (note[0] - n)) + (x / 3), y * (27 - move) - (note[4] == -2 ? y : 0),
-                                x / 6, y / 2, size, canvas, paint, (int) note[4], true);
-                    }
+                    group = note[5];
+                    lines.add(new float[]{2 * x + (x1 * (note[0] - n)) + (x / 3) + (x / 6),
+                            note[1], note[3], (y * (27 - move) - y * 5), y * (27 - move) - (note[4] == -2 ? y : 0),
+                            (float) (Math.log(note[1]) / Math.log(2)) - 2});
                 }
                 else {
                     drawNote(false, 2 * x + (x1 * (note[0] - n)) + (x / 3), y * (27 - move) - (note[4] == -2 ? y : 0),
@@ -555,7 +558,7 @@ public class LinesWithCursor extends View {
         Collections.reverse(ligas);
         for (float[] temp : ligas){ // for next ligas
             if (nextLigas.contains((int) temp[6])){
-                move = getMove(temp[3]);;
+                move = getMove(temp[3]);
                 top = (y * (27 - move) - moveY * 4);
                 bottom = (y * (27 - move) + moveY * 4);
                 canvas.drawArc((float)  (2 * x + (k * (temp[0] - n))) + x / 6, top,

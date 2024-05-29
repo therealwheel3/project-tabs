@@ -10,7 +10,7 @@ import com.example.projecttabs.midi.event.meta.TimeSignature;
  */
 public class MetronomeTick extends MidiEvent
 {
-    private int mResolution;
+    private final int mResolution;
     private TimeSignature mSignature;
 
     private int mCurrentMeasure;

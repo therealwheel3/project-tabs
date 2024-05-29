@@ -111,10 +111,7 @@ public class MidiUtil
     {
         byte[] ret = new byte[len];
 
-        for(int i = 0; i < len; i++)
-        {
-            ret[i] = buffer[off + i];
-        }
+        System.arraycopy(buffer, off + 0, ret, 0, len);
 
         return ret;
     }

@@ -571,7 +571,7 @@ public class LinesWithoutCursor extends View {
         Collections.reverse(ligas);
         for (float[] temp : ligas){ // for next ligas
             if (nextLigas.contains((int) temp[6])){
-                move = getMove(temp[3]);;
+                move = getMove(temp[3]);
                 top = (y * (27 - move) - moveY * 4);
                 bottom = (y * (27 - move) + moveY * 4);
                 canvas.drawArc((float)  (2 * x + (k * (temp[0] - n))) + x / 6, top,

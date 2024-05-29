@@ -29,7 +29,7 @@ import java.io.OutputStream;
 public class SystemExclusiveEvent extends MidiEvent
 {
     private int mType;
-    private VariableLengthInt mLength;
+    private final VariableLengthInt mLength;
     private byte[] mData;
 
     public SystemExclusiveEvent(int type, long tick, byte[] data)

@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class EventPrinter implements MidiEventListener
 {
-    private String mLabel;
+    private final String mLabel;
 
     public EventPrinter(String label)
     {

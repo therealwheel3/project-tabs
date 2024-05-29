@@ -16,6 +16,10 @@
 
 package com.example.projecttabs.midi;
 
+import static android.content.Context.MODE_PRIVATE;
+
+import android.util.Log;
+
 import com.example.projecttabs.midi.util.MidiUtil;
 
 import java.io.BufferedInputStream;
@@ -176,20 +180,21 @@ public class MidiFile
     public void writeToFile(File outFile) throws FileNotFoundException, IOException
     {
         FileOutputStream fout = new FileOutputStream(outFile);
+        try {
+            fout.write(IDENTIFIER);
+            fout.write(MidiUtil.intToBytes(6, 4));
+            fout.write(MidiUtil.intToBytes(mType, 2));
+            fout.write(MidiUtil.intToBytes(mTrackCount, 2));
+            fout.write(MidiUtil.intToBytes(mResolution, 2));
 
-        fout.write(IDENTIFIER);
-        fout.write(MidiUtil.intToBytes(6, 4));
-        fout.write(MidiUtil.intToBytes(mType, 2));
-        fout.write(MidiUtil.intToBytes(mTrackCount, 2));
-        fout.write(MidiUtil.intToBytes(mResolution, 2));
-
-        for(MidiTrack T : mTracks)
-        {
-            T.writeToFile(fout);
+            for (MidiTrack T : mTracks) {
+                T.writeToFile(fout);
+            }
         }
-
-        fout.flush();
-        fout.close();
+        finally {
+            fout.flush();
+            fout.close();
+        }
     }
 
     private void initFromBuffer(byte[] buffer)

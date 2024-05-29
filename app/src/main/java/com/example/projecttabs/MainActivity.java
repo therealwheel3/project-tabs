@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +28,9 @@ import com.example.projecttabs.midi.util.MusicalConstants;
 import com.example.projecttabs.midi.util.Packer;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,16 +40,16 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     public static final String APP_PREFERENCES = "mysettings";
-    private File file = new File("/storage/emulated/0/download/Ball3.mid");
+    private File file = new File("/storage/emulated/0/download/Ball5.mid");
     Cursor cursor;
     LinesWithCursor lines;
     private int duration = 4;
-    ArrayList<float[]> fmap;
     ArrayList<ArrayList<float[]>> map;
     MidiFile midiFile;
     float[] mainInfo;
     int n = 0;
-    ArrayList<ArrayList<float[]>> changedTrack = new ArrayList<>();
+    ArrayList<ArrayList<ArrayList<float[]>>> changedTracks = new ArrayList<>();
+    ArrayList<ArrayList<float[]>> changedTrack;
     private int trackNumber = 0;
     SharedPreferences mSettings;
     SharedPreferences.Editor editor;
@@ -61,10 +65,19 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(MainActivity.this, "android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[] { "android.permission.READ_EXTERNAL_STORAGE" }, 1);
         }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, "android.permission.WRITE_EXTERNAL_STORAGE") == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[] { "android.permission.WRITE_EXTERNAL_STORAGE" }, 1);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, "android.permission.MANAGE_EXTERNAL_STORAGE") == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[] { "android.permission.MANAGE_EXTERNAL_STORAGE" }, 1);
+        }
+
 
         setContentView(R.layout.activity_main);
         try {
             midiFile = new MidiFile(file);
+            File tempFile = new File("/storage/emulated/0/midi/Ball55.mid");
+            midiFile.writeToFile(tempFile);
         } catch (IOException e) {
             Log.d("midifile", "open failed");
         }
@@ -147,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
                     else changedTrack.add(cursor.getNotes());
                     n--;
                     cursor.prevTact(changedTrack.get(n));
-                    cursor.setNotes(changedTrack.get(n));
                     lines.setData(cursor.getNotesForView());
                     lines.setTactNumber(n + 1);
                     lines.invalidate();
@@ -162,15 +174,11 @@ public class MainActivity extends AppCompatActivity {
                 cursor.placeNote();
                 lines.setData(cursor.getNotesForView());
                 lines.invalidate();
-                for (float[] temp : cursor.getNotesForView()){
-                    Log.d("dldkkdkddjd", Arrays.toString(temp));
-                }
             }
         });
 
         Button plusDuration = findViewById(R.id.sizeRight);
         Button minusDuration = findViewById(R.id.sizeLeft);
-
 
 
         Button playButton = findViewById(R.id.playButton);
@@ -192,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                 if (trackNumber < midiFile.getTrackCount() - 1){
                     trackNumber++;
                     trackNumberField.setText(String.valueOf(trackNumber + 1));
-                    changeTrack(trackNumber);
+                    changeTrack();
                     Log.d("Current track number: ", trackNumber + "");
                 }
             }
@@ -205,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
                 if (trackNumber > 0) {
                     trackNumber--;
                     trackNumberField.setText(String.valueOf(trackNumber + 1));
-                    changeTrack(trackNumber);
+                    changeTrack();
                     Log.d("Current track number: ", trackNumber + "");
                 }
             }
@@ -325,6 +333,22 @@ public class MainActivity extends AppCompatActivity {
                 lines.invalidate();
             }
         });
+
+        Button saveButton = findViewById(R.id.saveButton);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MidiFile savedFile;
+                savedFile = Packer.packAllTracks(changedTracks, midiFile.getTracks());
+                try {
+                    savedFile.writeToFile(file);
+                    Toast.makeText(MainActivity.this, "file saved", Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+        });
     }
 
     @Override
@@ -367,7 +391,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initialSetup(){
-        file = new File(mSettings.getString("filePath", "/storage/emulated/0/download/Ball3.mid"));
+        file = new File(mSettings.getString("filePath", "/storage/emulated/0/download/Ball5.mid"));
         try {
             midiFile = new MidiFile(file);
             int resolution = midiFile.getResolution();
@@ -375,6 +399,14 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(0).getEvents());
             ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
             map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
+
+            changedTracks = new ArrayList<>();
+            for (int i = 0 ; i < midiFile.getTrackCount(); i++){
+                changedTracks.add(Packer.finalMap(Packer.generateNotesMap(new ArrayList<>(midiFile.getTracks().get(i).getEvents()), midiFile.getResolution() * 4, midiFile.getResolution() * 4), midiFile.getResolution() * 4, midiFile.getResolution(), midiFile.getResolution() * 4));
+            }
+            Log.d("tracks count", midiFile.getTrackCount() + "");
+            changedTrack = changedTracks.get(0);
+
             if (map.size() > 0){
                 lines = new LinesWithCursor(this);
                 lines.setCursor(cursor);
@@ -401,36 +433,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void changeTrack(int n){
-        file = new File(Objects.requireNonNull(mSettings.getString("filePath", "/storage/emulated/0/download/Ball3.mid")));
-        try {
-            midiFile = new MidiFile(file);
-            int resolution = midiFile.getResolution();
-            List<MidiTrack> tracks = midiFile.getTracks();
-            ArrayList<MidiEvent> events = new ArrayList<>(tracks.get(trackNumber).getEvents());
-            ArrayList<float[]> fmap = Packer.generateNotesMap(events, resolution * 4, resolution * 4);
-            ArrayList<ArrayList<float[]>> map = Packer.finalMap(fmap, resolution * 4, resolution, resolution * 4);
-            if (map.size() > 0){
-                lines = new LinesWithCursor(this);
-                cursor.setNotes(map.get(0));
-                lines.setCursor(cursor);
-                lines.setData(map.get(0), 0, 4, 4,
-                        MusicalConstants.getIndent(0), 0, midiFile.getResolution() * 4, 1);
-                line1.removeAllViews();
-                line1.addView(lines);
-
-                for (MidiTrack temp : tracks){
-                    float[] info = Packer.getMainInfo(new ArrayList<>(temp.getEvents()));
-                    Log.d("main info ", Arrays.toString(info));
-                    if (!Arrays.equals(info, mainInfo)){
-                        mainInfo = info.clone();
-                        break;
-                    }
-                }
-
-            }
-        } catch (IOException e) {
-            Log.d("midifile", "open failed");
+    private void changeTrack(){
+        file = new File(Objects.requireNonNull(mSettings.getString("filePath", "/storage/emulated/0/download/Ball5.mid")));
+        changedTrack = changedTracks.get(trackNumber);
+        n = 0;
+        if (map.size() > 0) {
+            lines = new LinesWithCursor(this);
+            cursor.reload();
+            cursor.setNotes(map.get(0));
+            lines.setCursor(cursor);
+            lines.setData(map.get(0), 0, 4, 4,
+                    MusicalConstants.getIndent(0), 0, midiFile.getResolution() * 4, 1);
+            line1.removeAllViews();
+            line1.addView(lines);
         }
     }
 }

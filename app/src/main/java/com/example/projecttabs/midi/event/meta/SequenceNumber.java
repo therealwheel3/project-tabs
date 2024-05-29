@@ -25,7 +25,7 @@ import java.io.OutputStream;
 
 public class SequenceNumber extends MetaEvent
 {
-    private int mNumber;
+    private final int mNumber;
 
     public SequenceNumber(long tick, long delta, int number)
     {

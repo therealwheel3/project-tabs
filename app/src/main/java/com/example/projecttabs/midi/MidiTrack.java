@@ -43,7 +43,7 @@ public class MidiTrack
     private boolean mClosed;
     private long mEndOfTrackDelta;
 
-    private TreeSet<MidiEvent> mEvents;
+    private final TreeSet<MidiEvent> mEvents;
 
     public static MidiTrack createTempoTrack()
     {

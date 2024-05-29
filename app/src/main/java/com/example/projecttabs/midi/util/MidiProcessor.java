@@ -31,18 +31,18 @@ public class MidiProcessor
 {
     private static final int PROCESS_RATE_MS = 8;
 
-    private HashMap<Class<? extends MidiEvent>, List<MidiEventListener>> mEventsToListeners;
-    private HashMap<MidiEventListener, List<Class<? extends MidiEvent>>> mListenersToEvents;
+    private final HashMap<Class<? extends MidiEvent>, List<MidiEventListener>> mEventsToListeners;
+    private final HashMap<MidiEventListener, List<Class<? extends MidiEvent>>> mListenersToEvents;
 
-    private MidiFile mMidiFile;
+    private final MidiFile mMidiFile;
     private boolean mRunning;
     private double mTicksElapsed;
     private long mMsElapsed;
 
     private int mMPQN;
-    private int mPPQ;
+    private final int mPPQ;
 
-    private MetronomeTick mMetronome;
+    private final MetronomeTick mMetronome;
     private MidiTrackEventQueue[] mEventQueues;
 
     public MidiProcessor(MidiFile input)
@@ -329,9 +329,9 @@ public class MidiProcessor
     private class MidiTrackEventQueue
     {
 
-        private MidiTrack mTrack;
-        private Iterator<MidiEvent> mIterator;
-        private ArrayList<MidiEvent> mEventsToDispatch;
+        private final MidiTrack mTrack;
+        private final Iterator<MidiEvent> mIterator;
+        private final ArrayList<MidiEvent> mEventsToDispatch;
         private MidiEvent mNext;
 
         public MidiTrackEventQueue(MidiTrack track)

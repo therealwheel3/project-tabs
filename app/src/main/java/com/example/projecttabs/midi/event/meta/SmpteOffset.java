@@ -155,7 +155,7 @@ public class SmpteOffset extends MetaEvent
 
         public final int value;
 
-        private FrameRate(int v)
+        FrameRate(int v)
         {
             value = v;
         }
